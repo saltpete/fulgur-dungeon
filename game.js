@@ -47,6 +47,11 @@ window.addEventListener('keyup', (e) => {
 
 
 // TODO B0: Overlay, das die Bildrate (rAF-Aufrufe pro Sekunde) zeigt.
+let lastTime = performance.now();
+let fps = 0;
+let lastDt = 0;
+//Alpha noch hinzufügen, wenn B3 implementiert wird.
+
 // TODO B1: Geschwindigkeit in px/SEKUNDE, Bewegung mit vx * dt.
 // TODO B2: Fester Zeitschritt STEP = 1/60 mit Akkumulator (Eimer).
 // TODO B3: Interpolation: prevX merken, alpha = acc/STEP, dazwischen zeichnen.
@@ -69,12 +74,20 @@ function render() {
   ctx.fillStyle = '#c8102e';
   ctx.fillRect(box.x, box.y, box.w, box.h);
   // TODO B0 / B3: Overlay (dt, alpha, fps) zeichnen.
+  ctx.fillStyle = '#000000';
+  ctx.fillText(`FPS: ${fps.toFixed(0)}`, 10, 20);
+  ctx.fillText(`DT: ${lastDt.toFixed(3)}`, 10, 40);
 }
 
 // ---- GAME LOOP ---------------------------------------------
 // TODO A1: requestAnimationFrame-Loop, der update() und render() ruft.
 // TODO B2: Akkumulator-Struktur (feste Simulationsschritte + Rendering).
-function frame() {
+function frame(now) {
+  const frameTime = (now-lastTime) / 1000; // in Sekunden
+  lastTime = now;
+  lastDt = frameTime;
+  fps = 1 / frameTime;
+
   update();
   render();
   requestAnimationFrame(frame);
