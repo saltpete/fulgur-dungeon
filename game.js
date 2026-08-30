@@ -18,6 +18,7 @@ const W = canvas.width, H = canvas.height;
 // ---- ZUSTAND -----------------------------------------------
 // Koordinaten: Ursprung oben links, y waechst nach unten.
 const box = { x: 160, y: 200, w: 32, h: 32 };
+let prevX = box.x; // TODO B3: fuer Interpolation merken
 
 // TODO A1: Bewegung im Loop ergaenzen (x += 3 pro Frame).
 
@@ -73,15 +74,18 @@ function simulate(dt) {
 }
 
 // ---- RENDER: liest Zustand, mutiert nie --------------------
-function render() {
+function render(alpha) {
+  // TODO B3
+  const drawX = prevX + (box.x - prevX) * alpha;
   // TODO A2: erst clearRect (Zeichenzyklus), dann zeichnen.
   ctx.clearRect(0, 0, W, H);
   ctx.fillStyle = '#c8102e';
-  ctx.fillRect(box.x, box.y, box.w, box.h);
+  ctx.fillRect(drawX, box.y, box.w, box.h);
   // TODO B0 / B3: Overlay (dt, alpha, fps) zeichnen.
   ctx.fillStyle = '#000000';
   ctx.fillText(`FPS: ${fps.toFixed(0)}`, 10, 20);
-  ctx.fillText(`DT: ${lastDt.toFixed(3)}`, 10, 40);
+  ctx.fillText(`DT: ${lastDt.toFixed(4)}`, 10, 40);
+  ctx.fillText(`Alpha: ${alpha.toFixed(3)}`, 10, 60);
 }
 
 // ---- GAME LOOP ---------------------------------------------
@@ -95,10 +99,12 @@ function frame(now) {
 
   accumulator += frameTime;
   while (accumulator >= STEP) {
+    prevX = box.x; // TODO B3: fuer Interpolation merken
     simulate(STEP);
     accumulator -= STEP;
   }
-  render();
+  const alpha = accumulator / STEP; // TODO B3: fuer Interpolation merken
+  render(alpha);
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
