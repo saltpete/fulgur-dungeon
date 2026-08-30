@@ -20,7 +20,31 @@ const W = canvas.width, H = canvas.height;
 const box = { x: 160, y: 200, w: 32, h: 32 };
 
 // TODO A1: Bewegung im Loop ergaenzen (x += 3 pro Frame).
+
 // TODO A3: Eingabezustand { left, right }, keydown/keyup setzen Flags.
+const input = { left: false, right: false };
+
+window.addEventListener('keydown', (e) => {
+  // e.key ist bei den Pfeiltasten 'ArrowLeft' / 'ArrowRight'
+  // passendes Feld auf true setzen
+  if (e.key === 'ArrowLeft') {
+    input.left = true;
+  }
+  if (e.key === 'ArrowRight') {
+    input.right = true;
+  }
+});
+
+window.addEventListener('keyup', (e) => {
+  // dasselbe, aber auf false
+  if (e.key === 'ArrowLeft') {
+    input.left = false;
+  }
+  if (e.key === 'ArrowRight') {
+    input.right = false;
+  }
+});
+
 
 // TODO B0: Overlay, das die Bildrate (rAF-Aufrufe pro Sekunde) zeigt.
 // TODO B1: Geschwindigkeit in px/SEKUNDE, Bewegung mit vx * dt.
@@ -30,6 +54,12 @@ const box = { x: 160, y: 200, w: 32, h: 32 };
 // ---- UPDATE: mutiert Zustand, zeichnet nie -----------------
 function update() {
   // TODO A1 / A3 / B1
+  if (input.left) {
+    box.x -= 3;
+  }
+  if (input.right) {
+    box.x += 3;
+  }
 }
 
 // ---- RENDER: liest Zustand, mutiert nie --------------------
