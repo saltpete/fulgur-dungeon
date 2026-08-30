@@ -53,19 +53,22 @@ let lastDt = 0;
 //Alpha noch hinzufügen, wenn B3 implementiert wird.
 
 // TODO B1: Geschwindigkeit in px/SEKUNDE, Bewegung mit vx * dt.
-const speed = 180; // px pro Sekunde
+const SPEED = 180; // px pro Sekunde
 
 // TODO B2: Fester Zeitschritt STEP = 1/60 mit Akkumulator (Eimer).
+const STEP = 1/60; // 60 FPS
+let accumulator = 0; // Eimer
+
 // TODO B3: Interpolation: prevX merken, alpha = acc/STEP, dazwischen zeichnen.
 
 // ---- UPDATE: mutiert Zustand, zeichnet nie -----------------
-function update() {
+function simulate(dt) {
   // TODO A1 / A3 / B1
   if (input.left) {
-    box.x -= speed * lastDt;
+    box.x -= SPEED * dt;
   }
   if (input.right) {
-    box.x += speed * lastDt;
+    box.x += SPEED * dt;
   }
 }
 
@@ -90,7 +93,11 @@ function frame(now) {
   lastDt = frameTime;
   fps = 1 / frameTime;
 
-  update(frameTime);
+  accumulator += frameTime;
+  while (accumulator >= STEP) {
+    simulate(STEP);
+    accumulator -= STEP;
+  }
   render();
   requestAnimationFrame(frame);
 }
