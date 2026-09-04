@@ -19,37 +19,42 @@ const W = canvas.width, H = canvas.height;
 // Koordinaten: Ursprung oben links, y waechst nach unten.
 
 // TODO A3: Eingabezustand { left, right }, keydown/keyup setzen Flags.
-const input = { left: false, right: false, up: false, down: false };
+// Overlay-Flag zu Beginn true, damit Overlay beim Start sichtbar ist.
+const input = { left: false, right: false, up: false, down: false, overlayEnabled: true };
 
 window.addEventListener('keydown', (e) => {
   // e.key ist bei den Pfeiltasten 'ArrowLeft' / 'ArrowRight'
   // passendes Feld auf true setzen
-  if (e.key === 'ArrowLeft') {
+  if (e.key === 'ArrowLeft'|| e.key === 'a') {
     input.left = true;
   }
-  if (e.key === 'ArrowRight') {
+  if (e.key === 'ArrowRight' || e.key === 'd') {
     input.right = true;
   }
-  if (e.key === 'ArrowUp'){
+  if (e.key === 'ArrowUp' || e.key === 'w') {
   input.up = true; 
   }
-  if (e.key === 'ArrowDown') {
+  if (e.key === 'ArrowDown' || e.key === 's') {
     input.down = true;
+  }
+  //Overlay-Taste 'O' zum Ein-/Ausschalten
+  if (e.key === 'o') {
+    input.overlayEnabled = !input.overlayEnabled;
   }
 });
 
 window.addEventListener('keyup', (e) => {
   // dasselbe, aber auf false
-  if (e.key === 'ArrowLeft') {
+  if (e.key === 'ArrowLeft' || e.key === 'a') {
     input.left = false;
   }
-  if (e.key === 'ArrowRight') {
+  if (e.key === 'ArrowRight' || e.key === 'd') {
     input.right = false;
   }
-  if (e.key === 'ArrowUp') {
+  if (e.key === 'ArrowUp' || e.key === 'w') {
     input.up = false;
   }
-  if (e.key === 'ArrowDown') {
+  if (e.key === 'ArrowDown' || e.key === 's') {
     input.down = false;
   }
 });
@@ -106,7 +111,9 @@ function frame(now) {
     const dy = o.prevY + (o.y - o.prevY) * alpha;
     o.render(ctx, dx, dy);
   }
-  drawOverlay(alpha); 
+  if (input.overlayEnabled){
+    drawOverlay(alpha);
+  }
   requestAnimationFrame(frame);
 }
 
