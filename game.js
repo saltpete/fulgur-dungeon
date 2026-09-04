@@ -59,6 +59,7 @@ window.addEventListener('keyup', (e) => {
 let lastTime = performance.now();
 let fps = 0;
 let lastDt = 0;
+const FPS_SMOOTHING = 0.1; // Glättungsfaktor für FPS-Berechnung
 
 // TODO B2: Fester Zeitschritt STEP = 1/60 mit Akkumulator (Eimer).
 const STEP = 1/60; // 60 FPS
@@ -85,7 +86,7 @@ function frame(now) {
   const frameTime = (now-lastTime) / 1000; 
   lastTime = now;
   lastDt = frameTime;
-  fps = 1 / frameTime;
+  fps = fps+(1/frameTime - fps) * FPS_SMOOTHING; //FPS glätten für Overlay (Ähnlich wie bei Interpolation)
 
   accumulator += frameTime;
   while (accumulator >= STEP) {
@@ -123,7 +124,7 @@ class Movement {
   update(entity, dt){
     entity.x += this.speedx * dt;
     entity.y += this.speedy * dt;
-    // Falls es ausserhalb des Canvas geht
+    // Falls es ausserhalb des Canvas geht 
     if (entity.x < 0 || entity.x+entity.size > W) this.speedx = -this.speedx; 
     if (entity.y < 0 || entity.y+entity.size > H) this.speedy = -this.speedy;
   }
