@@ -9,4 +9,4 @@ Doppelklick auf index.html, oder in VS Code mit der Erweiterung
 ## Steuerung:
 - Pfeiltasten / WASD:	Bewegen
 - Leertaste: 	Angriff in Blickrichtung
-- F1:	Debug-Overlay ein- und ausblenden
+- O:	Debug-Overlay ein- und ausblenden
