@@ -26,11 +26,11 @@ const map = [   // 9 Reihen, 16 Spalten. 0 Boden begehbar, 1 Wand
   [1,0,0,1,0,0,0,1,0,0,0,0,1,0,0,1],
   [1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1],
   [1,0,0,0,1,1,0,1,1,1,0,0,0,0,0,1],
-  [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+  [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2],
   [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
 ];
 
-const COLORS = { 0: '#ae7617', 1: '#1e0a02' };
+const COLORS = { 0: '#ae7617', 1: '#1e0a02', 2: '#f7e8e3' };
 
 const ROWS = map.length;
 const COLS = map[0].length;
@@ -75,13 +75,13 @@ sheet.width = FW * FRAMES; sheet.height = FH;
 
 // Input
 // Overlay-Flag zu Beginn true, damit Overlay beim Start sichtbar ist.
-const input = { 
-  left: false, 
-  right: false, 
-  up: false, 
-  down: false, 
+const input = {
+  left: false,
+  right: false,
+  up: false,
+  down: false,
   step: null,
-  roll: false, 
+  roll: false,
   overlayEnabled: true };
 
 const KEYS = {
@@ -94,16 +94,10 @@ const KEYS = {
 
 window.addEventListener('keydown', (e) => {
   // Default unterdrücken
-  if (KEYS[e.code]) { input[KEYS[e.code]] = true; e.preventDefault(); } 
+  if (KEYS[e.code]) { input[KEYS[e.code]] = true; e.preventDefault(); }
   if (e.code === 'Space') e.preventDefault();
 
-  // Flankengetriggert: nur bei ECHTEM Tastendruck, nicht bei der
-  // Auto-Wiederholung des Betriebssystems.
-  if (!e.repeat) {
-    if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
-      input.jump = true;                       // Track P: ein Impuls
-    }
-    // ---- BRUCH-EXPERIMENT Track K, Aufgabe 3 -----------------
+  //Angriff hinzufügen
 
     if (MODE === 'grid') {
       if (e.code === 'ArrowLeft'  || e.code === 'KeyA') input.step = 'left';
@@ -111,8 +105,7 @@ window.addEventListener('keydown', (e) => {
       if (e.code === 'ArrowUp'    || e.code === 'KeyW') input.step = 'up';
       if (e.code === 'ArrowDown'  || e.code === 'KeyS') input.step = 'down';
     }
-  }
-});
+  });
 
 window.addEventListener('keyup', (e) => {
   if (KEYS[e.code]) input[KEYS[e.code]] = false;
@@ -139,8 +132,6 @@ function drawOverlay(alpha) {
 }
 
 // ---- GAME LOOP ---------------------------------------------
-// TODO A1: requestAnimationFrame-Loop, der update() und render() ruft.
-// TODO B2: Akkumulator-Struktur (feste Simulationsschritte + Rendering).
 function frame(now) {
   const frameTime = (now-lastTime) / 1000;
   lastTime = now;
@@ -254,11 +245,18 @@ class Entity {
 
 function tryMove(e, dcol, drow) {
   const nc = e.col + dcol, nr = e.row + drow;  // Kandidat
-  // 1. Liegt der Kandidat im Spielfeld?  (ergänzen)
+  // 1. Liegt der Kandidat im Spielfeld?
   if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) return;
-  // 2. Ist die Zelle begehbar?             (ergänzen)
-  if (map[nr][nc] !== 0) return;
+  // 2. Ist die Zelle begehbar? Boden (0) und Ausgang (2) ja, Wand (1) nein
+  if (map[nr][nc] !== 0 && map[nr][nc] !== 2) return;
   e.col = nc; e.row = nr;                          // 3. Zustand ändern
+  foundExit(e);                                    // 4. Steht die Figur jetzt auf dem Ausgang?
+}
+
+function foundExit(e){
+  if (map[e.row][e.col] === 2) {
+    console.log("Found exit, could leave to next Area");
+  }
 }
 
 /* Aus Starterset PVA2 - Einfachheitshalber das aus Kaefer genommen
