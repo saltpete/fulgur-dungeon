@@ -13,10 +13,34 @@
 
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
+ctx.imageSmoothingEnabled = false; // Pixelgrafik ohne Antialiasing
 const W = canvas.width, H = canvas.height;
-const TILE   = 50;
 const MODE = 'grid'
 
+
+
+
+// Assets
+// ============================================================
+const TILE   = 48;
+const TSRC = 16;
+const SCALE  = TILE / TSRC; // 48/16 = 3
+const SPRITE = 64;
+const DIR = {down: 0, left: 1, right: 2, up: 3};
+const DRAW = SPRITE * SCALE; // 64*3 = 192
+const FOOT = 0.734;
+
+// Player
+const heroWalk = new Image();
+heroWalk.src   = 'assets/Swordsman_lvl1_Walk_with_shadow.png';  // craftpix.net (License: Free for personal and commercial use, with credit to craftpix.net)
+const heroIdle= new Image();
+heroIdle.src = 'assets/Swordsman_lvl1_Idle_with_shadow.png'; // craftpix.net (License: Free for personal and commercial use, with credit to craftpix.net)
+const heroAttack = new Image();
+heroAttack.src = 'assets/Swordsman_lvl1_attack_with_shadow.png'// craftpix.net (License: Free for personal and commercial use, with credit to craftpix.net)
+
+// Maptiles
+const tiles = new Image();
+tiles.src = 'assets/walls_floor.png'; // craftpix.net (License: Free for personal and commercial use, with credit to craftpix.net)
 
 const map = [   // 9 Reihen, 16 Spalten. 0 Boden begehbar, 1 Wand
   [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
@@ -30,7 +54,11 @@ const map = [   // 9 Reihen, 16 Spalten. 0 Boden begehbar, 1 Wand
   [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
 ];
 
-const COLORS = { 0: '#ae7617', 1: '#1e0a02', 2: '#f7e8e3' };
+const TILESET = {
+  0: [1, 6], // Boden
+  1: [1, 3], // Wand
+  2: [11, 8], // Ausgang
+};
 
 const ROWS = map.length;
 const COLS = map[0].length;
@@ -39,11 +67,13 @@ const COLS = map[0].length;
 function drawMap(){
   for(let y=0; y<map.length; y++){
     for(let x=0; x<map[y].length; x++){
-      const tile = map[y][x];
-      if(COLORS[tile]){
-        ctx.fillStyle = COLORS[tile];
-        ctx.fillRect(x*TILE, y*TILE, TILE, TILE);
-      }
+      const t = TILESET[map[y][x]];
+      if(!t) continue;
+      ctx.drawImage(
+        tiles,
+        t[0]*TSRC, t[1]*TSRC, TSRC, TSRC,     // Ausschnitt im Sheet
+        x*TILE,   y*TILE,   TILE, TILE        // Ziel auf dem Canvas
+      );
     }
   }
 }
@@ -99,7 +129,7 @@ window.addEventListener('keydown', (e) => {
 
   //Angriff hinzufügen
 
-    if (MODE === 'grid') {
+    if (!e.repeat && MODE === 'grid') {
       if (e.code === 'ArrowLeft'  || e.code === 'KeyA') input.step = 'left';
       if (e.code === 'ArrowRight' || e.code === 'KeyD') input.step = 'right';
       if (e.code === 'ArrowUp'    || e.code === 'KeyW') input.step = 'up';
@@ -110,6 +140,13 @@ window.addEventListener('keydown', (e) => {
 window.addEventListener('keyup', (e) => {
   if (KEYS[e.code]) input[KEYS[e.code]] = false;
 });
+
+for (const b of document.querySelectorAll('#dpad button')) {
+  b.addEventListener('pointerdown', (ev) => {
+    ev.preventDefault();
+    input.step = b.dataset.dir;
+  });
+}
 
 
 // Overlay, das die Bildrate (rAF-Aufrufe pro Sekunde) zeigt.
@@ -161,7 +198,7 @@ function frame(now) {
   for (const o of objects) {
     const dx = o.prevX + (o.x - o.prevX) * alpha;
     const dy = o.prevY + (o.y - o.prevY) * alpha;
-    o.render(ctx, dx, dy);
+    o.render(ctx, dx, dy, frameTime);
   }
   // Overlay aufrufen
   if (input.overlayEnabled){
@@ -227,7 +264,7 @@ class Entity {
     this.y = row * TILE;
     this.prevX = this.x;
     this.prevY = this.y;
-    this.facing = 1;
+    this.facing = DIR.down;
     this.size = size;
     this.color = color;
     this.components = []; }
@@ -236,9 +273,28 @@ class Entity {
   simulate(dt){
     for (const c of this.components) c.update(this, dt); }
 
-  render(ctx,dx,dy){
-    ctx.fillStyle = this.color;
-    ctx.fillRect(dx, dy, this.size, this.size);
+  render(ctx,dx,dy,dt){
+    if (this.animTimer === undefined) {this.animTimer = 0; this.animFrame = 0;}
+
+    const sheet = this.moving ? heroWalk : heroIdle;
+    const frames = this.moving ? 6 : 12;
+    const FRAME_TIME = 0.125;
+
+    if (this.animFrame >= frames) this.animFrame = 0;
+    
+    this.animTimer += dt;
+    if (this.animTimer >= FRAME_TIME) {
+      this.animTimer -= FRAME_TIME;
+      this.animFrame = (this.animFrame + 1) % frames;
+    }
+
+    const offX = (TILE - DRAW) / 2;
+    const offY = TILE - DRAW * FOOT;
+    ctx.drawImage(
+      sheet,
+      this.animFrame * SPRITE, this.facing * SPRITE, SPRITE, SPRITE,
+      dx + offX, dy + offY, DRAW, DRAW
+    );
   }
 }
 
@@ -290,10 +346,10 @@ function drawGridWorld() {
 // Bewegung des Spielers
 class GridControl {
   update(e, dt) {
-    if (input.step === 'left') tryMove(e, -1, 0);
-    else if (input.step === 'right') tryMove(e, 1, 0);
-    else if (input.step === 'up') tryMove(e, 0,-1);
-    else if (input.step === 'down') tryMove(e, 0, 1);
+    if (input.step === 'left')  { e.facing =  DIR.left; tryMove(e, -1, 0); }
+    else if (input.step === 'right') { e.facing = DIR.right; tryMove(e, 1, 0); }
+    else if (input.step === 'up') { e.facing = DIR.up; tryMove(e, 0,-1); }
+    else if (input.step === 'down') { e.facing = DIR.down; tryMove(e, 0, 1); }
   }
 
 }
@@ -302,15 +358,14 @@ class GridMovement {
   update(e, dt) {
     const zielX = e.col * TILE;
     const zielY = e.row * TILE;
-    const k = Math.min(1, dt * 12); 
+    const k = Math.min(1, dt * 12);
     e.x += (zielX - e.x) * k;
     e.y += (zielY - e.y) * k;
     e.moving = Math.abs(zielX - e.x) > 0.5 || Math.abs(zielY - e.y) > 0.5;
-
   }
 }
 
 
 const objects = [
-  new Entity(1, 1, 50, '#c8102e').add(new GridControl()).add(new GridMovement)
+  new Entity(1, 1, 50, '#c8102e').add(new GridControl()).add(new GridMovement())
   ]
