@@ -35,5 +35,5 @@
 }
 
 @media (pointer: coarse) and (orientation: landscape) {
-  canvas { width: auto; height: 100dvh; max-width: 100vw; }
+  canvas { width: auto; height: 100dvh; max-width: 800px; }
 }

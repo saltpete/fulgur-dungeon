@@ -22,13 +22,19 @@ const MODE = 'grid'
 
 // Assets
 // ============================================================
-const TILE   = 48;
+const TILE   = 32;
 const TSRC = 16;
-const SCALE  = TILE / TSRC; // 48/16 = 3
+const SCALE  = TILE / TSRC; // 32/16 = 2
 const SPRITE = 64;
 const DIR = {down: 0, left: 1, right: 2, up: 3};
-const DRAW = SPRITE * SCALE; // 64*3 = 192
+const DRAW = SPRITE * SCALE; // 64*2 = 128
 const FOOT = 0.734;
+
+// Animation
+const HERO_IDLE_FRAMES = [12, 12, 12, 4];   // Zeile 3 hat im Asset nur 4 Frames
+const HERO_WALK_FRAMES = 6;
+const ENEMY_IDLE_FRAMES = [4, 4, 4, 4];   // ganzes Set hat nur 4 Frames
+const ENEMY_WALK_FRAMES = 4;
 
 // Player
 const heroWalk = new Image();
@@ -38,70 +44,101 @@ heroIdle.src = 'assets/Swordsman_lvl1_Idle_with_shadow.png'; // craftpix.net (Li
 const heroAttack = new Image();
 heroAttack.src = 'assets/Swordsman_lvl1_attack_with_shadow.png'// craftpix.net (License: Free for personal and commercial use, with credit to craftpix.net)
 
+// Enemy
+const enemyWalk = new Image();
+enemyWalk.src   = 'assets/orc1_walk_with_shadow.png';
+const enemyIdle= new Image();
+enemyIdle.src = 'assets/orc1_idle_with_shadow.png';
+const enemyAttack = new Image();
+enemyAttack.src = 'assets/orc1_attack_with_shadow.png'
+
+//Sprites
+const HERO_SPRITE = {
+  walk: heroWalk, idle: heroIdle,
+  walkFrames: HERO_WALK_FRAMES, idleFrames: HERO_IDLE_FRAMES,
+  rows: { down: 0, left: 1, right: 2, up: 3 }
+};
+
+const ENEMY_SPRITE = {
+  walk: enemyWalk, idle: enemyIdle,
+  walkFrames: ENEMY_WALK_FRAMES, idleFrames: ENEMY_IDLE_FRAMES,
+  rows: { down: 0, up: 1, left: 2, right: 3 }   // Ork-Sheet ist anders sortiert
+};
+
 // Maptiles
 const tiles = new Image();
 tiles.src = 'assets/walls_floor.png'; // craftpix.net (License: Free for personal and commercial use, with credit to craftpix.net)
 
-const map = [   // 9 Reihen, 16 Spalten. 0 Boden begehbar, 1 Wand
-  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-  [1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1],
-  [1,0,1,1,0,0,0,1,0,0,1,1,1,0,0,1],
-  [1,0,0,1,0,0,0,0,0,0,0,0,1,0,0,1],
-  [1,0,0,1,0,0,0,1,0,0,0,0,1,0,0,1],
-  [1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1],
-  [1,0,0,0,1,1,0,1,1,1,0,0,0,0,0,1],
-  [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2],
-  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+const map = [   // 15 Reihen, 25 Spalten. 0 Boden, 1 Wand, 2 Treppe
+  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+  [1,1,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,1,1],
+  [1,1,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,1,1],
+  [1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
+  [1,1,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,1,1],
+  [1,1,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1],
+  [1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1],
+  [1,1,1,1,1,0,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,1,1],
+  [1,1,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,1,1],
+  [1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,1,1],
+  [1,1,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,1,1],
+  [1,1,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,1,1],
+  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
 ];
 
+
 const TILESET = {
-  0: [1, 6], // Boden
-  1: [1, 3], // Wand
-  2: [11, 8], // Ausgang
+  0: [1, 6],      // Boden, Grundkachel
+  2: [11, 8],     // Treppe
 };
+
+// Bodenvarianten mit Fugen, rein optisch
+const FLOOR_VARIANTS = [[1,6], [1,6], [1,6], [11,21], [12,21], [11,22], [12,22]];
 
 const ROWS = map.length;
 const COLS = map[0].length;
 
 
-function drawMap(){
-  for(let y=0; y<map.length; y++){
-    for(let x=0; x<map[y].length; x++){
-      const t = TILESET[map[y][x]];
-      if(!t) continue;
-      ctx.drawImage(
-        tiles,
-        t[0]*TSRC, t[1]*TSRC, TSRC, TSRC,     // Ausschnitt im Sheet
-        x*TILE,   y*TILE,   TILE, TILE        // Ziel auf dem Canvas
-      );
-    }
-  }
+function isWall(x, y){
+  if (y < 0 || y >= ROWS || x < 0 || x >= COLS) return true;   // ausserhalb gilt als Wand
+  return map[y][x] === 1;
 }
 
+// Waehlt aus dem 3x5-Wandblock im Tileset (Spalten 0-2, Zeilen 0-4).
+// Waagrecht: welche Seite ist frei. Senkrecht: wie tief sitzt die Zelle im Block.
+function wallTile(x, y){
+  const sx = !isWall(x-1, y) ? 0 : (!isWall(x+1, y) ? 2 : 1);
+  let sy;
+  if      (!isWall(x, y+1)) sy = 4;   // Front, Unterkante des Blocks
+  else if (!isWall(x, y+2)) sy = 2;   // helle Abschlusskante
+  else if (!isWall(x, y-1)) sy = 0;   // Oberkante des Blocks
+  else                      sy = 1;   // dunkles Inneres
+  return [sx, sy];
+}
 
-// SPRITE SHEET
-// ============================================================
-// Damit Sie keine Bilddatei brauchen, wird das Sheet beim Start
-// per Code gemalt: 4 Frames zu je 32 mal 32 Pixeln, nebeneinander.
-const FW = 32, FH = 32, FRAMES = 4;
-const sheet = document.createElement('canvas');
-sheet.width = FW * FRAMES; sheet.height = FH;
-(function paintSheet(){
-  const s = sheet.getContext('2d');
-  for (let i = 0; i < FRAMES; i++) {
-    const ox = i * FW;
-    s.fillStyle = '#c8102e';                 // Koerper
-    s.beginPath(); s.ellipse(ox + 15, 19, 10, 9 + (i % 2), 0, 0, 7); s.fill();
-    s.fillStyle = '#1f2430';                 // Kopf
-    s.beginPath(); s.arc(ox + 19, 9, 7, 0, 7); s.fill();
-    s.fillStyle = '#fafaf8';                 // Auge, schaut nach rechts
-    s.fillRect(ox + 21, 7, 3, 3);
-    s.fillStyle = '#1f2430';                 // Beine, wandern je Frame
-    s.fillRect(ox + 9 + (i % 2) * 3, 26, 4, 5);
-    s.fillRect(ox + 18 - (i % 2) * 3, 26, 4, 5);
+// Jedes Feld bekommt immer dieselbe Variante.
+// Math.random() waere hier falsch: die Kachel wuerde in jedem Frame neu
+// gewuerfelt und das Bild flackern. Stattdessen rechnen wir aus x und y
+// eine Zahl aus, die fuer dasselbe Feld immer gleich ist, und nehmen
+// davon den Rest durch die Anzahl Varianten.
+function floorTile(x, y){
+  const mixed = x * 7919 + y * 104729;    // zwei Primzahlen, damit sich
+  return FLOOR_VARIANTS[mixed % FLOOR_VARIANTS.length];   // kein Muster bildet
+}
+
+function drawMap(){
+  for(let y = 0; y < ROWS; y++){
+    for(let x = 0; x < COLS; x++){
+      const v = map[y][x];
+      const t = v === 1 ? wallTile(x, y)
+              : v === 0 ? floorTile(x, y)
+              : TILESET[v];
+      if(!t) continue;
+      ctx.drawImage(tiles, t[0]*TSRC, t[1]*TSRC, TSRC, TSRC, x*TILE, y*TILE, TILE, TILE);
+    }
   }
-})();
-
+};
 
 // Input
 // Overlay-Flag zu Beginn true, damit Overlay beim Start sichtbar ist.
@@ -141,12 +178,21 @@ window.addEventListener('keyup', (e) => {
   if (KEYS[e.code]) input[KEYS[e.code]] = false;
 });
 
+
+// Touchscreen-DPad
 for (const b of document.querySelectorAll('#dpad button')) {
-  b.addEventListener('pointerdown', (ev) => {
-    ev.preventDefault();
-    input.step = b.dataset.dir;
-  });
+  const dir = b.dataset.dir;
+  b.addEventListener('pointerdown', (ev) => { ev.preventDefault(); input.step = dir; input[dir] = true; });
+  b.addEventListener('pointerup',   () => { input[dir] = false; });
+  b.addEventListener('pointercancel', () => { input[dir] = false; });
+  b.addEventListener('pointerleave', () => { input[dir] = false; });
 }
+
+// Wenn der Tab gewechselt wird, alle Tasten loslassen, damit die Figur nicht weiterläuft.
+window.addEventListener('blur', () => {
+  input.left = input.right = input.up = input.down = false;
+  input.step = null;
+});
 
 
 // Overlay, das die Bildrate (rAF-Aufrufe pro Sekunde) zeigt.
@@ -154,15 +200,16 @@ let lastTime = performance.now();
 let fps = 0;
 let lastDt = 0;
 const FPS_SMOOTHING = 0.1; // Glättungsfaktor für FPS-Berechnung
+let position = {row: 0, col: 0}; // Position des Spielers
 
 // ester Zeitschritt STEP = 1/60 mit Akkumulator (Eimer).
 const STEP = 1/60; // 60 FPS
 let accumulator = 0; // Eimer
 
-// ---- RENDER: liest Zustand, mutiert nie --------------------
+// ---- Overlay--------------------
 function drawOverlay(alpha) {
   // TODO B0 / B3: Overlay (dt, alpha, fps) zeichnen.
-  ctx.fillStyle = '#000000'; // Schwarz für Text
+  ctx.fillStyle = '#fcf7f7'; // Weiss für Text
   ctx.fillText(`FPS: ${fps.toFixed(0)}`, 10, 20);
   ctx.fillText(`DT: ${lastDt.toFixed(4)}`, 10, 40);
   ctx.fillText(`Alpha: ${alpha.toFixed(3)}`, 10, 60);
@@ -170,7 +217,7 @@ function drawOverlay(alpha) {
 
 // ---- GAME LOOP ---------------------------------------------
 function frame(now) {
-  const frameTime = (now-lastTime) / 1000;
+  const frameTime = Math.min((now - lastTime) / 1000, 0.25); //Begrenzung auf 250ms, damit bei Tab-Wechsel nicht alles explodiert
   lastTime = now;
   lastDt = frameTime;
   fps = fps+(1/frameTime - fps) * FPS_SMOOTHING; //FPS glätten für Overlay (Ähnlich wie bei Interpolation)
@@ -210,6 +257,11 @@ function frame(now) {
 
 requestAnimationFrame(frame);
 
+// Wenn der Tab gewechselt wird, den Akkumulator zurücksetzen, damit die Simulation nicht explodiert.
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) { lastTime = performance.now(); accumulator = 0; }
+});
+
 // ---- TODO C: Komposition -----------------------------------
 // Ersetzen Sie die Player-Logik durch eine Entity-Huelle mit
 // Komponentenliste. Eine Movement-Komponente rechnet mit dt.
@@ -217,56 +269,16 @@ requestAnimationFrame(frame);
 // nur durch Zusammenstecken von Komponenten.
 //
 
-class Movement {
-  constructor(speedx, speedy){ this.speedx = speedx; this.speedy = speedy; }
-  update(entity, dt){
-    entity.x += this.speedx * dt;
-    entity.y += this.speedy * dt;
-    // Falls es ausserhalb des Canvas geht
-    if (entity.x < 0 || entity.x+entity.size > W) this.speedx = -this.speedx;
-    if (entity.y < 0 || entity.y+entity.size > H) this.speedy = -this.speedy;
-  }
-}
-
-
-/*
-class Playercontrol {
-  constructor(speed){ this.speed = speed; }
-  update(entity, dt){
-    if (input.left) {
-      entity.x -= this.speed * dt;
-    }
-    if (input.right) {
-      entity.x += this.speed * dt;
-    }
-    if (input.up) {
-      entity.y -= this.speed * dt;
-    }
-    if (input.down) {
-      entity.y += this.speed * dt;
-    }
-    //Bereichsbeschränkung
-    if (entity.x < 0 ) entity.x = 0;  // Linker Rand
-    if (entity.x+entity.size > W) entity.x = W - entity.size; // Rechter Rand
-    if (entity.y < 0 ) entity.y = 0; // Oberer Rand
-    if (entity.y+entity.size > H) entity.y = H - entity.size; // Unterer Rand
-  }
-} */
-
-
-
-
 class Entity {
-  constructor(col,row, size, color){
+  constructor(col,row, sprite){
     this.col = col;
     this.row = row;
     this.x = col * TILE;
     this.y = row * TILE;
     this.prevX = this.x;
     this.prevY = this.y;
-    this.facing = DIR.down;
-    this.size = size;
-    this.color = color;
+    this.facing = 'down';
+    this.sprite = sprite;
     this.components = []; }
   add(c){ this.components.push(c); return this; }
 
@@ -275,13 +287,13 @@ class Entity {
 
   render(ctx,dx,dy,dt){
     if (this.animTimer === undefined) {this.animTimer = 0; this.animFrame = 0;}
-
-    const sheet = this.moving ? heroWalk : heroIdle;
-    const frames = this.moving ? 6 : 12;
+    const row = this.sprite.rows[this.facing];
+    const sheet  = this.moving ? this.sprite.walk : this.sprite.idle;
+    const frames = this.moving ? this.sprite.walkFrames : this.sprite.idleFrames[row];
     const FRAME_TIME = 0.125;
 
     if (this.animFrame >= frames) this.animFrame = 0;
-    
+
     this.animTimer += dt;
     if (this.animTimer >= FRAME_TIME) {
       this.animTimer -= FRAME_TIME;
@@ -292,7 +304,7 @@ class Entity {
     const offY = TILE - DRAW * FOOT;
     ctx.drawImage(
       sheet,
-      this.animFrame * SPRITE, this.facing * SPRITE, SPRITE, SPRITE,
+      this.animFrame * SPRITE, row * SPRITE, SPRITE, SPRITE,
       dx + offX, dy + offY, DRAW, DRAW
     );
   }
@@ -315,45 +327,27 @@ function foundExit(e){
   }
 }
 
-/* Aus Starterset PVA2 - Einfachheitshalber das aus Kaefer genommen
-function drawGridWorld() {
-  for (let r = 0; r < ROWS; r++) {
-    for (let c = 0; c < COLS; c++) {
-      if (map[r][c] === 1) {
-        ctx.fillStyle = '#c9cdd4';
-        ctx.fillRect(c * TILE, r * TILE, TILE, TILE);
-      } else if (pathCells.has(c + ',' + r)) {
-        ctx.fillStyle = '#f0ece6';
-        ctx.fillRect(c * TILE, r * TILE, TILE, TILE);
-      }
-    }
-  }
-  ctx.strokeStyle = '#e6e2dc'; ctx.lineWidth = 1;
-  for (let c = 0; c <= COLS; c++) {
-    ctx.beginPath(); ctx.moveTo(c * TILE, 0); ctx.lineTo(c * TILE, ROWS * TILE); ctx.stroke();
-  }
-  for (let r = 0; r <= ROWS; r++) {
-    ctx.beginPath(); ctx.moveTo(0, r * TILE); ctx.lineTo(COLS * TILE, r * TILE); ctx.stroke();
-  }
-  for (const key of towers) {
-    const parts = key.split(',');
-    const c = Number(parts[0]), r = Number(parts[1]);
-    ctx.fillStyle = '#1f2430';
-    ctx.fillRect(c * TILE + 8, r * TILE + 8, TILE - 16, TILE - 16);
-  }
-} */
 
 // Bewegung des Spielers
 class GridControl {
   update(e, dt) {
-    if (input.step === 'left')  { e.facing =  DIR.left; tryMove(e, -1, 0); }
-    else if (input.step === 'right') { e.facing = DIR.right; tryMove(e, 1, 0); }
-    else if (input.step === 'up') { e.facing = DIR.up; tryMove(e, 0,-1); }
-    else if (input.step === 'down') { e.facing = DIR.down; tryMove(e, 0, 1); }
+    // Impuls hat immer Vorrang, damit der erste Druck sofort reagiert
+    let dir = input.step;
+    // Danach nur weiter, wenn die Figur die letzte Kachel erreicht hat
+    if (!dir && !e.moving) {
+      if (input.left) dir = 'left';
+      else if (input.right) dir = 'right';
+      else if (input.up) dir = 'up';
+      else if (input.down) dir = 'down';
+    }
+    if (dir === 'left')       { e.facing = 'left';  tryMove(e, -1, 0); }
+    else if (dir === 'right') { e.facing = 'right'; tryMove(e,  1, 0); }
+    else if (dir === 'up')    { e.facing = 'up';    tryMove(e,  0,-1); }
+    else if (dir === 'down')  { e.facing = 'down';  tryMove(e,  0, 1); }
   }
-
 }
 
+// Bewegung der Figur auf dem Raster
 class GridMovement {
   update(e, dt) {
     const zielX = e.col * TILE;
@@ -361,11 +355,40 @@ class GridMovement {
     const k = Math.min(1, dt * 12);
     e.x += (zielX - e.x) * k;
     e.y += (zielY - e.y) * k;
-    e.moving = Math.abs(zielX - e.x) > 0.5 || Math.abs(zielY - e.y) > 0.5;
+    e.moving = Math.abs(zielX - e.x) > 3 || Math.abs(zielY - e.y) > 3;
+  }
+}
+
+// Gegner verfolgt Spieler
+class ChaseControl {
+  constructor(target, interval) {
+    this.target = target;
+    this.interval = interval;
+    this.timer = 0;
+  }
+  update(e, dt) {
+    // Timer runterzaehlen, bei > 0 raus
+    this.timer -= dt;
+    if (this.timer > 0) return;
+    this.timer = this.interval;
+    // Timer zuruecksetzen
+    // Abstand in Spalten und Reihen zum Ziel
+    const dcol = this.target.col - e.col;
+    const drow = this.target.row - e.row;
+    // groessere Achse waehlen
+    if (Math.abs(dcol) > Math.abs(drow)) {
+      if (dcol < 0) { e.facing = 'left';  tryMove(e, -1, 0); } // nach links
+      else          { e.facing = 'right'; tryMove(e,  1, 0); } // nach rechts
+    } else {
+      if (drow < 0) { e.facing = 'up';    tryMove(e,  0,-1); } // nach oben
+      else          { e.facing = 'down';  tryMove(e,  0, 1); } // nach unten
+    }
   }
 }
 
 
-const objects = [
-  new Entity(1, 1, 50, '#c8102e').add(new GridControl()).add(new GridMovement())
-  ]
+const player = new Entity(2, 2, HERO_SPRITE).add(new GridControl()).add(new GridMovement());
+const enemy = new Entity(22, 10, ENEMY_SPRITE).add(new ChaseControl(player, 1)).add(new GridMovement());
+
+
+const objects = [player, enemy];
