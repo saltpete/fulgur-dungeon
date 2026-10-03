@@ -8,5 +8,5 @@ Doppelklick auf index.html, oder in VS Code mit der Erweiterung
 
 ## Steuerung:
 - Pfeiltasten / WASD:	Bewegen
-- Leertaste: 	Angriff in Blickrichtung
+- Shift: Ausweichsprung/-rolle
 - O:	Debug-Overlay ein- und ausblenden

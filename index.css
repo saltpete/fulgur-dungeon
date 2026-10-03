@@ -1,5 +1,5 @@
 #dpad { display: none; }
-
+/*
 @media (pointer: coarse) {
   #dpad {
     display: grid;
@@ -28,7 +28,7 @@
   #dpad [data-dir="right"] { grid-area: 2 / 3; }
   #dpad [data-dir="down"]  { grid-area: 3 / 2; }
 }
-
+*/
 @media (pointer: coarse) {
   body { min-height: 100dvh; overflow: hidden; }
   h1, p { display: none; }

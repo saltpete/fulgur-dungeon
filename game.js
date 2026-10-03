@@ -34,7 +34,7 @@ const FOOT = 0.734;
 const HERO_IDLE_FRAMES = [12, 12, 12, 4];   // Zeile 3 hat im Asset nur 4 Frames
 const HERO_WALK_FRAMES = 6;
 const ENEMY_IDLE_FRAMES = [4, 4, 4, 4];   // ganzes Set hat nur 4 Frames
-const ENEMY_WALK_FRAMES = 4;
+const ENEMY_WALK_FRAMES = 6;
 
 // Player
 const heroWalk = new Image();
@@ -140,6 +140,34 @@ function drawMap(){
   }
 };
 
+// ============================================================
+const shake = {
+  timer: 0,
+  duration: 0.15,
+  magnitude:0
+}
+
+let lastBumps = 0;
+
+function triggerShake(mag  = 4, dur = 0.15){
+  if (shake.timer > 0) return; // Wenn bereits ein Shake läuft, nicht überschreiben
+  shake.magnitude = mag;
+  shake.duration = dur;
+  shake.timer = dur;
+}
+
+function updateShake(dt){
+  shake.timer = Math.max(0, shake.timer - dt);
+}
+
+function shakeOffset(){
+  if (shake.timer <= 0) return {x:0, y:0};
+  const k = shake.timer / shake.duration;
+  const offsetX = (Math.random() * 2 - 1) * shake.magnitude * k;
+  const offsetY = (Math.random() * 2 - 1) * shake.magnitude * k;
+  return {x: offsetX, y: offsetY};
+}
+
 // Input
 // Overlay-Flag zu Beginn true, damit Overlay beim Start sichtbar ist.
 const input = {
@@ -156,7 +184,7 @@ const KEYS = {
   ArrowRight:'right', KeyD:'right',
   ArrowUp:'up', KeyW:'up',
   ArrowDown:'down', KeyS:'down',
-  Space:'space'
+  Space:'space',
 };
 
 window.addEventListener('keydown', (e) => {
@@ -164,7 +192,12 @@ window.addEventListener('keydown', (e) => {
   if (KEYS[e.code]) { input[KEYS[e.code]] = true; e.preventDefault(); }
   if (e.code === 'Space') e.preventDefault();
 
-  //Angriff hinzufügen
+  //Overlay
+  if (e.code === 'KeyO' && !e.repeat) input.overlayEnabled = !input.overlayEnabled;;
+  // Rolle
+  if ((e.code === 'ShiftLeft' || e.code === 'ShiftRight') && !e.repeat) input.roll = true;
+
+  // TODO: Angriff hinzufügen
 
     if (!e.repeat && MODE === 'grid') {
       if (e.code === 'ArrowLeft'  || e.code === 'KeyA') input.step = 'left';
@@ -178,7 +211,7 @@ window.addEventListener('keyup', (e) => {
   if (KEYS[e.code]) input[KEYS[e.code]] = false;
 });
 
-
+/*
 // Touchscreen-DPad
 for (const b of document.querySelectorAll('#dpad button')) {
   const dir = b.dataset.dir;
@@ -186,7 +219,7 @@ for (const b of document.querySelectorAll('#dpad button')) {
   b.addEventListener('pointerup',   () => { input[dir] = false; });
   b.addEventListener('pointercancel', () => { input[dir] = false; });
   b.addEventListener('pointerleave', () => { input[dir] = false; });
-}
+}*/
 
 // Wenn der Tab gewechselt wird, alle Tasten loslassen, damit die Figur nicht weiterläuft.
 window.addEventListener('blur', () => {
@@ -208,12 +241,19 @@ let accumulator = 0; // Eimer
 
 // ---- Overlay--------------------
 function drawOverlay(alpha) {
-  // TODO B0 / B3: Overlay (dt, alpha, fps) zeichnen.
+  // TODOPosition des Spielers in Zeile und Spalte anzeigen.
+  position.row = player.row;
+  position.col = player.col;
   ctx.fillStyle = '#fcf7f7'; // Weiss für Text
+  ctx.fillText(`Player Position: Row ${position.row}, Col ${position.col}`, 10, 80);
   ctx.fillText(`FPS: ${fps.toFixed(0)}`, 10, 20);
   ctx.fillText(`DT: ${lastDt.toFixed(4)}`, 10, 40);
   ctx.fillText(`Alpha: ${alpha.toFixed(3)}`, 10, 60);
 }
+
+
+// Health bar
+// TODO
 
 // ---- GAME LOOP ---------------------------------------------
 function frame(now) {
@@ -234,10 +274,22 @@ function frame(now) {
     }
     accumulator -= STEP;
     input.step = null;
+    input.roll = false;
   }
+
+  if ((player.bumps || 0) > lastBumps) {
+    triggerShake(4, 0.15);
+    lastBumps = player.bumps;
+  }
+  updateShake(frameTime);
+
+
   const alpha = accumulator / STEP; // TODO B3: fuer Interpolation merken
+  const off = shakeOffset();
   ctx.clearRect(0, 0, W, H); // Gesamte Fläche löschen vor dem rendern
 
+  ctx.save();
+  ctx.translate(Math.round(off.x), Math.round(off.y)); // Shake-Offset anwenden
   // Map zeichnen
   drawMap();
 
@@ -247,6 +299,8 @@ function frame(now) {
     const dy = o.prevY + (o.y - o.prevY) * alpha;
     o.render(ctx, dx, dy, frameTime);
   }
+
+  ctx.restore();
   // Overlay aufrufen
   if (input.overlayEnabled){
     drawOverlay(alpha);
@@ -262,12 +316,11 @@ document.addEventListener('visibilitychange', () => {
   if (!document.hidden) { lastTime = performance.now(); accumulator = 0; }
 });
 
-// ---- TODO C: Komposition -----------------------------------
-// Ersetzen Sie die Player-Logik durch eine Entity-Huelle mit
-// Komponentenliste. Eine Movement-Komponente rechnet mit dt.
-// Beweisen Sie: ein zweiter Objekttyp entsteht OHNE neue Klasse,
-// nur durch Zusammenstecken von Komponenten.
-//
+
+
+
+// Komposition -----------------------------------
+
 
 class Entity {
   constructor(col,row, sprite){
@@ -310,19 +363,20 @@ class Entity {
   }
 }
 
-
+ // Grundlegende Bewegung auf dem Raster
 function tryMove(e, dcol, drow) {
   const nc = e.col + dcol, nr = e.row + drow;  // Kandidat
   // 1. Liegt der Kandidat im Spielfeld?
-  if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) return;
+  if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) return false;
   // 2. Ist die Zelle begehbar? Boden (0) und Ausgang (2) ja, Wand (1) nein
-  if (map[nr][nc] !== 0 && map[nr][nc] !== 2) return;
+  if (map[nr][nc] !== 0 && map[nr][nc] !== 2) return false;
   e.col = nc; e.row = nr;                          // 3. Zustand ändern
   foundExit(e);                                    // 4. Steht die Figur jetzt auf dem Ausgang?
+  return true;
 }
-
+// Wenn die Figur auf dem Ausgang steht, kann sie in den nächsten Bereich wechseln.
 function foundExit(e){
-  if (map[e.row][e.col] === 2) {
+  if (map[e.row][e.col] === 2 && e === player) {
     console.log("Found exit, could leave to next Area");
   }
 }
@@ -331,19 +385,63 @@ function foundExit(e){
 // Bewegung des Spielers
 class GridControl {
   update(e, dt) {
-    // Impuls hat immer Vorrang, damit der erste Druck sofort reagiert
-    let dir = input.step;
+    // Impuls merken, auch wenn die Figur gerade läuft
+    if(input.step) this.queued = input.step;
+    // Wenn die Figur gerade läuft, keine neue Bewegung starten
+    if (e.moving) return;
+
+    //Impulst wird verbraucht
+    let dir = this.queued || null;
+    const pressed = dir !== null;
+    this.queued = null;
+
     // Danach nur weiter, wenn die Figur die letzte Kachel erreicht hat
-    if (!dir && !e.moving) {
+    if (!dir) {
       if (input.left) dir = 'left';
       else if (input.right) dir = 'right';
       else if (input.up) dir = 'up';
       else if (input.down) dir = 'down';
     }
-    if (dir === 'left')       { e.facing = 'left';  tryMove(e, -1, 0); }
-    else if (dir === 'right') { e.facing = 'right'; tryMove(e,  1, 0); }
-    else if (dir === 'up')    { e.facing = 'up';    tryMove(e,  0,-1); }
-    else if (dir === 'down')  { e.facing = 'down';  tryMove(e,  0, 1); }
+
+    let moved = true;
+    if (dir === 'left')       { e.facing = 'left';  moved = tryMove(e, -1, 0); }
+    else if (dir === 'right') { e.facing = 'right'; moved = tryMove(e,  1, 0); }
+    else if (dir === 'up')    { e.facing = 'up';    moved = tryMove(e,  0,-1); }
+    else if (dir === 'down')  { e.facing = 'down';  moved = tryMove(e,  0, 1); }
+
+    // Schritt geklappt, Figur unterwegs
+    if(dir && moved) e.moving = true;
+    if (!moved && pressed) e.bumps = (e.bumps || 0) + 1;
+  }
+}
+
+// Rolle bzw. Sprungbewegung des Spielers
+class RollControl {
+  constructor(distance, cooldown){
+    this.distance = distance; 
+    this.cooldown = cooldown;
+    this.timer = 0;
+  }
+  update(e, dt) {
+    this.timer=Math.max(0, this.timer - dt);
+    if (!input.roll || this.timer > 0) return;
+
+    //Richtung: gedrückte Pfeiltaste sonst Blickrichtung
+    const dir = input.left ? 'left' : input.right ? 'right' : input.up ? 'up' : input.down ? 'down' : e.facing;
+    const [dcol,drow] = dir === 'left' ? [-1,0] : dir === 'right' ? [1,0] : dir === 'up' ? [0,-1] : [0,1];
+    e.facing = dir;
+
+    //Kacheln prüfen, stoppt bei Wand
+    let steps = 0;
+    for (let i=0; i<this.distance; i++){
+      if (!tryMove(e, dcol, drow)) break;
+      steps++;
+    }
+    if (steps > 0) {
+      e.moving = true;
+      this.timer = this.cooldown; //Cooldown nur, wenn die Rolle erfolgreich war
+      input.step = null; // Impuls verbrauchen
+    }
   }
 }
 
@@ -375,6 +473,10 @@ class ChaseControl {
     // Abstand in Spalten und Reihen zum Ziel
     const dcol = this.target.col - e.col;
     const drow = this.target.row - e.row;
+    
+    // Wenn der Gegner den Spieler erreicht, keine weitere Bewegung
+    if (Math.abs(dcol) + Math.abs(drow) <= 1) return;; // Wenn der Gegner den Spieler erreicht, keine weitere Bewegung
+
     // groessere Achse waehlen
     if (Math.abs(dcol) > Math.abs(drow)) {
       if (dcol < 0) { e.facing = 'left';  tryMove(e, -1, 0); } // nach links
@@ -387,8 +489,8 @@ class ChaseControl {
 }
 
 
-const player = new Entity(2, 2, HERO_SPRITE).add(new GridControl()).add(new GridMovement());
-const enemy = new Entity(22, 10, ENEMY_SPRITE).add(new ChaseControl(player, 1)).add(new GridMovement());
+const player = new Entity(2, 2, HERO_SPRITE).add(new GridMovement()).add(new RollControl(3,1.5)).add(new GridControl());
+const enemy = new Entity(22, 10, ENEMY_SPRITE).add(new ChaseControl(player, 0.5)).add(new GridMovement());
 
 
-const objects = [player, enemy];
+const objects = [player, enemy]
