@@ -320,6 +320,7 @@ function frame(now) {
   }
 
   ctx.restore();
+  drawHud();
 
   if (input.overlayEnabled){
     drawOverlay(alpha);

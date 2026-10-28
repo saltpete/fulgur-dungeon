@@ -20,6 +20,9 @@ const PALETTE = {
   s: '#d6dbe4',   // Stachel hell
   S: '#7a8294',   // Stachel dunkel
   g: '#3b3f4c',   // Bodenplatte
+  e: '#3a3346',    // leeres Herz
+  p: '#e04555',   // Herz rot
+  w: '#fff6d5',   // Glanz
   e: '#3a3346'    // leeres Herz
 };
 
@@ -42,6 +45,26 @@ const PIX = {
     '.kkkkkkkkkkkkkk.',
     '................'
   ],
+    heart: [
+    '.kkk.kkk.',
+    'kpppkpwpk',
+    'kpppppwpk',
+    'kpppppppk',
+    '.kpppppk.',
+    '..kpppk..',
+    '...kpk...',
+    '....k....'
+  ],
+  heartEmpty: [
+    '.kkk.kkk.',
+    'keeekeeek',
+    'keeeeeeek',
+    'keeeeeeek',
+    '.keeeeek.',
+    '..keeek..',
+    '...kek...',
+    '....k....'
+  ]
 };
 
 // Raster einmal in ein kleines Canvas malen und merken (Cache)
