@@ -94,16 +94,23 @@ function buildLevel(depth) {
   player = new Entity(LEVEL.hero[0], LEVEL.hero[1], HERO_SPRITE)
     .add(new GridMovement())        // Schreibt x,y
     .add(new RollControl(3, 1.5))   
-    .add(new GridControl()); 
+    .add(new GridControl()) 
+    .add(new Health());  
   player.kind = 'hero'; 
   player.solid = true;
+  player.maxHp = 5            // 5 Herzen
+  player.hp = player.maxHp;   // startet mit voller Gesundheit
   objects.push(player);
   
   // Ork wie in Block 2, jetzt fest (solid). Noch kein kind = 'orc', sonst stürzt hud.js ab
   const orc = new Entity(LEVEL.orc[0], LEVEL.orc[1], ENEMY_SPRITE)
   .add(new ChaseControl(player, 0.5))   // verfolgt den Helden, alle 0.5 s ein Schritt
-  .add(new GridMovement());             // Schreibt x,y
+  .add(new GridMovement())              // Schreibt x,y^
+  .add(new Health());                   // Ork kann Schaden nehmen
   orc.solid = true;
+  orc.kind = 'orc';                     // damit das HUD weiss, dass es ein Ork ist
+  orc.maxHp = 3;                        // hält 3 Treffer aus
+  orc.hp = orc.maxHp;
   objects.push(orc);
 
   for (const [c, r] of LEVEL.crates)  objects.push(makeCrate(c, r));

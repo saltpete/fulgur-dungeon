@@ -259,6 +259,13 @@ function drawOverlay(alpha) {
   ctx.textAlign = 'left';
   ctx.fillStyle = '#fcf7f7'; // Weiss für Text
   left.forEach((t, i) => ctx.fillText(t, 12, H - 46 + i * 14));
+
+  const orc = objects.find(o => o.kind === 'orc');
+  if (orc) {
+    ctx.textAlign = 'right';
+    ctx.fillText(`Ork: Leben ${orc.hp}/${orc.maxHp}`, W - 12, H - 46);
+    ctx.textAlign = 'left';
+  }
 }
 
 
