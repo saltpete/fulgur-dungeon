@@ -32,6 +32,7 @@ const TSRC = 16;
 const SCALE  = TILE / TSRC; // 32/16 = 2
 const SPRITE = 64;
 const DIR = {down: 0, left: 1, right: 2, up: 3};
+const DIRV = {left: [-1,0], right: [1,0], up: [0,-1], down: [0,1]}; // Vektor für jede Richtung
 const DRAW = SPRITE * SCALE; // 64*2 = 128
 const FOOT = 0.734;
 
@@ -59,8 +60,8 @@ enemyAttack.src = 'assets/orc1_attack_with_shadow.png'
 
 // Sprites
 const HERO_SPRITE = {
-  walk: heroWalk, idle: heroIdle,
-  walkFrames: HERO_WALK_FRAMES, idleFrames: HERO_IDLE_FRAMES,
+  walk: heroWalk, idle: heroIdle, attack: heroAttack,
+  walkFrames: HERO_WALK_FRAMES, idleFrames: HERO_IDLE_FRAMES, attackFrames:8,
   rows: { down: 0, left: 1, right: 2, up: 3 }
 };
 
@@ -157,6 +158,7 @@ const shake = {
 }
 
 let lastBumps = 0;
+let lastSwings = 0;     //Shake beim Angriff
 
 function triggerShake(mag  = 4, dur = 0.15){
   if (shake.timer > 0) return; // Wenn bereits ein Shake läuft, nicht überschreiben
@@ -189,7 +191,9 @@ const input = {
   down: false,
   step: null,
   roll: false,
-  overlayEnabled: true };
+  attack: false,
+  overlayEnabled: true,
+};
 
 const KEYS = {
   ArrowLeft:'left', KeyA:'left',
@@ -210,7 +214,8 @@ window.addEventListener('keydown', (e) => {
   if ((e.code === 'ShiftLeft' || e.code === 'ShiftRight') && !e.repeat) input.roll = true;
 
   // Angriff
-  // TODO: Angriff hinzufügen
+  if (e.code === 'Space' && !e.repeat) input.attack = true;
+
 
     if (!e.repeat && MODE === 'grid') {
       if (e.code === 'ArrowLeft'  || e.code === 'KeyA') input.step = 'left';
@@ -282,6 +287,7 @@ function simulationStep() {
   // Einmal-Impulse sind verbraucht
   input.step = null;
   input.roll = false;
+  input.attack = false;
 }
 
 // ---- GAME LOOP ---------------------------------------------
@@ -300,6 +306,10 @@ function frame(now) {
   if ((player.bumps || 0) > lastBumps) {
     triggerShake(4, 0.15);
     lastBumps = player.bumps;
+  }
+  if ((player.swings || 0 ) > lastSwings){
+    triggerShake(2, 0.08); //leichter Shake
+    lastSwings = player.swings;
   }
   updateShake(frameTime);
 
@@ -364,7 +374,7 @@ class Entity {
 
     if (this.animTimer === undefined) {this.animTimer = 0; this.animFrame = 0;}
     const row = this.sprite.rows[this.facing];
-    const sheet  = this.moving ? this.sprite.walk : this.sprite.idle;
+    let sheet  = this.moving ? this.sprite.walk : this.sprite.idle;
     const frames = this.moving ? this.sprite.walkFrames : this.sprite.idleFrames[row];
     const FRAME_TIME = 0.125;
 
@@ -376,11 +386,19 @@ class Entity {
       this.animFrame = (this.animFrame + 1) % frames;
     }
 
+    let frame = this.animFrame;
+
+    // Hieb
+    if (this.attackAnim > 0) {
+      sheet = this.sprite.attack;
+      frame = Math.min(this.sprite.attackFrames-1, Math.floor (this.attackAnim * this.sprite.attackFrames))
+    }
+
     const offX = (TILE - DRAW) / 2;
     const offY = TILE - DRAW * FOOT;
     ctx.drawImage(
       sheet,
-      this.animFrame * SPRITE, row * SPRITE, SPRITE, SPRITE,
+      frame * SPRITE, row * SPRITE, SPRITE, SPRITE,
       dx + offX, dy + offY, DRAW, DRAW
     );
   }
@@ -395,7 +413,7 @@ class GridControl {
     // Impuls merken, auch wenn die Figur gerade läuft
     if(input.step) this.queued = input.step;
     // Wenn die Figur gerade läuft, keine neue Bewegung starten
-    if (e.moving) return;
+    if (e.moving || e.attacking) return;
 
     //Impulst wird verbraucht
     let dir = this.queued || null;
@@ -432,7 +450,7 @@ class RollControl {
   }
   update(e, dt) {
     this.timer=Math.max(0, this.timer - dt);
-    if (!input.roll || this.timer > 0) return;
+    if (!input.roll || this.timer > 0 || e.attacking) return;
 
     //Richtung: gedrückte Pfeiltaste sonst Blickrichtung
     const dir = input.left ? 'left' : input.right ? 'right' : input.up ? 'up' : input.down ? 'down' : e.facing;

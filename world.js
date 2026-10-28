@@ -95,7 +95,8 @@ function buildLevel(depth) {
     .add(new GridMovement())        // Schreibt x,y
     .add(new RollControl(3, 1.5))   
     .add(new GridControl()) 
-    .add(new Health());  
+    .add(new AttackControl())     // Angriff mit Leertaste
+    .add(new Health());
   player.kind = 'hero'; 
   player.solid = true;
   player.maxHp = 5            // 5 Herzen
@@ -116,4 +117,5 @@ function buildLevel(depth) {
   for (const [c, r] of LEVEL.crates)  objects.push(makeCrate(c, r));
 
   lastBumps = 0;   // neuer Held beginnt wieder bei 0 Rempeleien
+  lastSwings = 0;
 }
