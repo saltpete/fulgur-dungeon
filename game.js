@@ -1,12 +1,17 @@
 // ============================================================
-// GAMEDEV Starter-Template (V0)
+// Fulgur Dungeon
 // ============================================================
-// In Uebung 1 bauen Sie dieses Standbild zu einem Fundament aus:
-//   Teil A  V0 bis V4, das Handwerk
-//   Teil B  die vier Zwaenge (variabler + fester Zeitschritt,
-//           Interpolation)
-//   Teil C  Komposition statt Vererbung
-//
+// In dieser Datei ist die Spiellogik implementiert. Sie ist in mehrere Teile gegliedert:
+// 1. Assets: Bilder, Tileset, Map, Figuren
+// 2. Input: Tastatur, Touchscreen-DPad, Overlay
+// 3. Game Loop: Simulation, Interpolation, Rendering
+// 4. Komposition: Figuren, Komponenten, Steuerung
+
+// ============================================================
+// Die weiteren Dateien mit der Spiellogik sind:
+// world.js    Hindernisse, Kollision, Interaktion, Ebenenaufbau
+// sprites.js  Pixelgrafiken
+
 // Grundregel: Jede Zeile, die Ihr KI-Assistent schreibt, muessen
 // Sie erklaeren koennen. In Uebung 1 arbeiten Sie ohne Assistent.
 // ============================================================
@@ -36,7 +41,7 @@ const HERO_WALK_FRAMES = 6;
 const ENEMY_IDLE_FRAMES = [4, 4, 4, 4];   // ganzes Set hat nur 4 Frames
 const ENEMY_WALK_FRAMES = 6;
 
-// Player
+// Held
 const heroWalk = new Image();
 heroWalk.src   = 'assets/Swordsman_lvl1_Walk_with_shadow.png';  // craftpix.net (License: Free for personal and commercial use, with credit to craftpix.net)
 const heroIdle= new Image();
@@ -44,7 +49,7 @@ heroIdle.src = 'assets/Swordsman_lvl1_Idle_with_shadow.png'; // craftpix.net (Li
 const heroAttack = new Image();
 heroAttack.src = 'assets/Swordsman_lvl1_attack_with_shadow.png'// craftpix.net (License: Free for personal and commercial use, with credit to craftpix.net)
 
-// Enemy
+// Gegner
 const enemyWalk = new Image();
 enemyWalk.src   = 'assets/orc1_walk_with_shadow.png';
 const enemyIdle= new Image();
@@ -52,7 +57,7 @@ enemyIdle.src = 'assets/orc1_idle_with_shadow.png';
 const enemyAttack = new Image();
 enemyAttack.src = 'assets/orc1_attack_with_shadow.png'
 
-//Sprites
+// Sprites
 const HERO_SPRITE = {
   walk: heroWalk, idle: heroIdle,
   walkFrames: HERO_WALK_FRAMES, idleFrames: HERO_IDLE_FRAMES,
@@ -96,10 +101,11 @@ const TILESET = {
 // Bodenvarianten mit Fugen, rein optisch
 const FLOOR_VARIANTS = [[1,6], [1,6], [1,6], [11,21], [12,21], [11,22], [12,22]];
 
+// Konstanten für die Anzahl der Zeilen und Spalten in der Karte
 const ROWS = map.length;
 const COLS = map[0].length;
 
-
+// Prüfung ob eine Zelle eine Wand ist. Außerhalb des Spielfeldes gilt als Wand.
 function isWall(x, y){
   if (y < 0 || y >= ROWS || x < 0 || x >= COLS) return true;   // ausserhalb gilt als Wand
   return map[y][x] === 1;
@@ -122,6 +128,7 @@ function wallTile(x, y){
 // gewuerfelt und das Bild flackern. Stattdessen rechnen wir aus x und y
 // eine Zahl aus, die fuer dasselbe Feld immer gleich ist, und nehmen
 // davon den Rest durch die Anzahl Varianten.
+
 function floorTile(x, y){
   const mixed = x * 7919 + y * 104729;    // zwei Primzahlen, damit sich
   return FLOOR_VARIANTS[mixed % FLOOR_VARIANTS.length];   // kein Muster bildet
@@ -140,6 +147,8 @@ function drawMap(){
   }
 };
 
+// ============================================================
+// Screen shake
 // ============================================================
 const shake = {
   timer: 0,
@@ -168,7 +177,10 @@ function shakeOffset(){
   return {x: offsetX, y: offsetY};
 }
 
+// ============================================================
 // Input
+// ============================================================
+
 // Overlay-Flag zu Beginn true, damit Overlay beim Start sichtbar ist.
 const input = {
   left: false,
@@ -197,6 +209,7 @@ window.addEventListener('keydown', (e) => {
   // Rolle
   if ((e.code === 'ShiftLeft' || e.code === 'ShiftRight') && !e.repeat) input.roll = true;
 
+  // Angriff
   // TODO: Angriff hinzufügen
 
     if (!e.repeat && MODE === 'grid') {
@@ -204,6 +217,7 @@ window.addEventListener('keydown', (e) => {
       if (e.code === 'ArrowRight' || e.code === 'KeyD') input.step = 'right';
       if (e.code === 'ArrowUp'    || e.code === 'KeyW') input.step = 'up';
       if (e.code === 'ArrowDown'  || e.code === 'KeyS') input.step = 'down';
+      
     }
   });
 
@@ -211,15 +225,6 @@ window.addEventListener('keyup', (e) => {
   if (KEYS[e.code]) input[KEYS[e.code]] = false;
 });
 
-/*
-// Touchscreen-DPad
-for (const b of document.querySelectorAll('#dpad button')) {
-  const dir = b.dataset.dir;
-  b.addEventListener('pointerdown', (ev) => { ev.preventDefault(); input.step = dir; input[dir] = true; });
-  b.addEventListener('pointerup',   () => { input[dir] = false; });
-  b.addEventListener('pointercancel', () => { input[dir] = false; });
-  b.addEventListener('pointerleave', () => { input[dir] = false; });
-}*/
 
 // Wenn der Tab gewechselt wird, alle Tasten loslassen, damit die Figur nicht weiterläuft.
 window.addEventListener('blur', () => {
@@ -241,40 +246,48 @@ let accumulator = 0; // Eimer
 
 // ---- Overlay--------------------
 function drawOverlay(alpha) {
-  // TODOPosition des Spielers in Zeile und Spalte anzeigen.
   position.row = player.row;
   position.col = player.col;
+  const left = [
+    `FPS: ${fps.toFixed(0)}   DT: ${lastDt.toFixed(4)}`,
+    `Alpha: ${alpha.toFixed(3)}`,
+    `Player Position: Row ${position.row}, Col ${position.col}`,
+  ]
+  ctx.fillStyle = 'rgba(12, 14, 20, 0.7)';
+  ctx.fillRect(0, H - 62, W, 62);
+  ctx.font = '11px sans-serif';
+  ctx.textAlign = 'left';
   ctx.fillStyle = '#fcf7f7'; // Weiss für Text
-  ctx.fillText(`Player Position: Row ${position.row}, Col ${position.col}`, 10, 80);
-  ctx.fillText(`FPS: ${fps.toFixed(0)}`, 10, 20);
-  ctx.fillText(`DT: ${lastDt.toFixed(4)}`, 10, 40);
-  ctx.fillText(`Alpha: ${alpha.toFixed(3)}`, 10, 60);
+  left.forEach((t, i) => ctx.fillText(t, 12, H - 46 + i * 14));
 }
 
 
-// Health bar
-// TODO
-
-// ---- GAME LOOP ---------------------------------------------
-function frame(now) {
-  const frameTime = Math.min((now - lastTime) / 1000, 0.25); //Begrenzung auf 250ms, damit bei Tab-Wechsel nicht alles explodiert
-  lastTime = now;
-  lastDt = frameTime;
-  fps = fps+(1/frameTime - fps) * FPS_SMOOTHING; //FPS glätten für Overlay (Ähnlich wie bei Interpolation)
-
-  accumulator += frameTime;
-  while (accumulator >= STEP) {
+// ---- SIMULATION: ein fester Schritt von 1/60 s -------------
+// Hier wird der Spielzustand verändert, sonst nirgends.
+function simulationStep() {
     for (const o of objects) {
       o.prevX = o.x;
       o.prevY = o.y;
     }
     for (const o of objects) {
       o.simulate(STEP);
-
     }
+  // Einmal-Impulse sind verbraucht
+  input.step = null;
+  input.roll = false;
+}
+
+// ---- GAME LOOP ---------------------------------------------
+function frame(now) {
+  const frameTime = Math.min((now - lastTime) / 1000, 0.25); //Begrenzung auf 250ms, damit bei Tab-Wechsel nicht alles explodiert
+  lastTime = now;
+  lastDt = frameTime;
+  if (frameTime > 0) fps = fps+(1/frameTime - fps) * FPS_SMOOTHING; //FPS glätten für Overlay (Ähnlich wie bei Interpolation)
+
+  accumulator += frameTime;
+  while (accumulator >= STEP) {
+    simulationStep();
     accumulator -= STEP;
-    input.step = null;
-    input.roll = false;
   }
 
   if ((player.bumps || 0) > lastBumps) {
@@ -283,33 +296,30 @@ function frame(now) {
   }
   updateShake(frameTime);
 
-
-  const alpha = accumulator / STEP; // TODO B3: fuer Interpolation merken
+  const alpha = accumulator / STEP; // Anteil bis zum nächsten Schritt, für die Interpolation
   const off = shakeOffset();
   ctx.clearRect(0, 0, W, H); // Gesamte Fläche löschen vor dem rendern
 
   ctx.save();
   ctx.translate(Math.round(off.x), Math.round(off.y)); // Shake-Offset anwenden
-  // Map zeichnen
   drawMap();
 
-  // Entities zeichnen
-  for (const o of objects) {
+  // Entities zeichnen:
+  const order = objects.slice().sort((a, b) => a.y - b.y);
+  for (const o of order) {
     const dx = o.prevX + (o.x - o.prevX) * alpha;
     const dy = o.prevY + (o.y - o.prevY) * alpha;
     o.render(ctx, dx, dy, frameTime);
   }
 
   ctx.restore();
-  // Overlay aufrufen
+
   if (input.overlayEnabled){
     drawOverlay(alpha);
   }
 
   requestAnimationFrame(frame);
 }
-
-requestAnimationFrame(frame);
 
 // Wenn der Tab gewechselt wird, den Akkumulator zurücksetzen, damit die Simulation nicht explodiert.
 document.addEventListener('visibilitychange', () => {
@@ -339,6 +349,11 @@ class Entity {
     for (const c of this.components) c.update(this, dt); }
 
   render(ctx,dx,dy,dt){
+    // Objekte mit eigner Pixelgrafik können hier direkt gezeichnet werden.
+    if (this.draw) {this.draw(ctx, dx, dy, dt); return;}
+
+
+
     if (this.animTimer === undefined) {this.animTimer = 0; this.animFrame = 0;}
     const row = this.sprite.rows[this.facing];
     const sheet  = this.moving ? this.sprite.walk : this.sprite.idle;
@@ -363,23 +378,7 @@ class Entity {
   }
 }
 
- // Grundlegende Bewegung auf dem Raster
-function tryMove(e, dcol, drow) {
-  const nc = e.col + dcol, nr = e.row + drow;  // Kandidat
-  // 1. Liegt der Kandidat im Spielfeld?
-  if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) return false;
-  // 2. Ist die Zelle begehbar? Boden (0) und Ausgang (2) ja, Wand (1) nein
-  if (map[nr][nc] !== 0 && map[nr][nc] !== 2) return false;
-  e.col = nc; e.row = nr;                          // 3. Zustand ändern
-  foundExit(e);                                    // 4. Steht die Figur jetzt auf dem Ausgang?
-  return true;
-}
-// Wenn die Figur auf dem Ausgang steht, kann sie in den nächsten Bereich wechseln.
-function foundExit(e){
-  if (map[e.row][e.col] === 2 && e === player) {
-    console.log("Found exit, could leave to next Area");
-  }
-}
+
 
 
 // Bewegung des Spielers
@@ -404,13 +403,14 @@ class GridControl {
     }
 
     let moved = true;
-    if (dir === 'left')       { e.facing = 'left';  moved = tryMove(e, -1, 0); }
-    else if (dir === 'right') { e.facing = 'right'; moved = tryMove(e,  1, 0); }
-    else if (dir === 'up')    { e.facing = 'up';    moved = tryMove(e,  0,-1); }
-    else if (dir === 'down')  { e.facing = 'down';  moved = tryMove(e,  0, 1); }
+    if (dir === 'left')       { e.facing = 'left';  moved = tryMove(e, -1, 0, true); }
+    else if (dir === 'right') { e.facing = 'right'; moved = tryMove(e,  1, 0, true); }
+    else if (dir === 'up')    { e.facing = 'up';    moved = tryMove(e,  0,-1, true); }
+    else if (dir === 'down')  { e.facing = 'down';  moved = tryMove(e,  0, 1, true); }
 
     // Schritt geklappt, Figur unterwegs
     if(dir && moved) e.moving = true;
+    // Gegen ein Hindernis gelaufen (Hebel zählt nicht, der reagiert selbst)
     if (!moved && pressed) e.bumps = (e.bumps || 0) + 1;
   }
 }
@@ -418,7 +418,7 @@ class GridControl {
 // Rolle bzw. Sprungbewegung des Spielers
 class RollControl {
   constructor(distance, cooldown){
-    this.distance = distance; 
+    this.distance = distance;
     this.cooldown = cooldown;
     this.timer = 0;
   }
@@ -431,7 +431,7 @@ class RollControl {
     const [dcol,drow] = dir === 'left' ? [-1,0] : dir === 'right' ? [1,0] : dir === 'up' ? [0,-1] : [0,1];
     e.facing = dir;
 
-    //Kacheln prüfen, stoppt bei Wand
+    //Kacheln prüfen, stoppt bei jedem Hindernis (Rolle schiebt keine Kisten)
     let steps = 0;
     for (let i=0; i<this.distance; i++){
       if (!tryMove(e, dcol, drow)) break;
@@ -489,8 +489,8 @@ class ChaseControl {
 }
 
 
-const player = new Entity(2, 2, HERO_SPRITE).add(new GridMovement()).add(new RollControl(3,1.5)).add(new GridControl());
-const enemy = new Entity(22, 10, ENEMY_SPRITE).add(new ChaseControl(player, 0.5)).add(new GridMovement());
-
-
-const objects = [player, enemy]
+// Start erst, wenn alle Skripte geladen sind
+window.addEventListener('DOMContentLoaded', () => {
+  buildLevel(1);   // Ebene 1 aufbauen
+  requestAnimationFrame(frame);
+});
