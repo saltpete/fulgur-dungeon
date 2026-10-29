@@ -101,6 +101,7 @@ function buildLevel(depth) {
   player.solid = true;
   player.maxHp = 5            // 5 Herzen
   player.hp = player.maxHp;   // startet mit voller Gesundheit
+  player.invulnTime = 1;            // nach einem Treffer 1 s geschützt
   objects.push(player);
   
   // Ork wie in Block 2, jetzt fest (solid). Noch kein kind = 'orc', sonst stürzt hud.js ab

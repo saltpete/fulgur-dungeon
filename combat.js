@@ -1,5 +1,5 @@
 // ==========================
-// combat.js · Kampf: Trefferpunkte, Schaden, Invinzibilität
+// combat.js · Kampf:  Leben, Schade, Angriff
 // ==========================
 
 // Komponente Health: Zählt die Schutzzeit (invuln) jeden Schritt herunter
@@ -9,6 +9,25 @@ class Health {
     e.invuln = Math.max(0,(e.invuln || 0) - dt);
   }
 }
+
+
+// Schaden für alle Treffer. (dcol, drow): Richtung des Treffers, für den Rückstoss.
+// Liefert true, wenn der Treffer zählt.
+function damage(t, amount, dcol = 0, drow = 0) {
+  if (t.hp <= 0 || t.invuln > 0) return false;   // schon bei 0 oder gerade geschützt
+  t.hp = Math.max(0, t.hp - amount);
+  t.invuln = t.invulnTime || 0;                   // Schutzzeit, falls die Figur eine hat
+  knockback(t, dcol, drow);
+  return true;
+}
+
+// Rückstoss: ein Feld in Trefferrichtung, wenn dort frei ist.
+// Nutzt dieselbe Kollision wie das Gehen, hält also an Hindernissen an.
+function knockback(t, dcol, drow) {
+  if (dcol === 0 && drow === 0) return;   // Treffer ohne Richtung, z. B. eine Falle
+  tryMove(t, dcol, drow);
+}
+
 
 //
 
@@ -48,5 +67,5 @@ class AttackControl {
 function meleeHit(e) {
   const [dcol,drow] = DIRV[e.facing];
   const t = blockerAt(e.col + dcol, e.row + drow, e);
-  if (t && t.hp !== undefined) t.hp= Math.max(0, t.hp - MELEE_DAMAGE); // Schaden zufügen
+  if (t && t.hp !== undefined) damage(t, MELEE_DAMAGE, dcol, drow); 
 }

@@ -308,7 +308,7 @@ function frame(now) {
     lastBumps = player.bumps;
   }
   if ((player.swings || 0 ) > lastSwings){
-    triggerShake(2, 0.08); //leichter Shake
+    triggerShake(1.5, 0.04); //leichter Shake
     lastSwings = player.swings;
   }
   updateShake(frameTime);
