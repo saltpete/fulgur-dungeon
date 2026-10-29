@@ -29,8 +29,13 @@ function knockback(t, dcol, drow) {
   tryMove(t, dcol, drow);
 }
 
-// Tod: Das Objekt wird nur markiert und erst nach dem Schritt entfernt
+// Tod: Das Objekt wird nur markiert und erst nach dem Schritt entfernt.
+// Beim Tod des Helden wird der Spielstatus verändert
 function die(t) {
+  if (t === player) {
+    game.state = 'dead';   // Spielstatus Tot -> // TODO: Weitere Spielstatusoptionen hinzufügen und Bildschirm entsprechend anpassen (Game Over Screen, Mainmenu, Optionen etc.)
+    return;
+  }
   t.dead = true;
 }
 

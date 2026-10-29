@@ -190,8 +190,9 @@ const input = {
   up: false,
   down: false,
   step: null,
-  roll: false,
-  attack: false,
+  roll: false,       // Shift für Ausweichrolle
+  attack: false,     // Leertaste für Nahkampf
+  restart: false,    // R oder Enter: neuer Durchlauf nach dem Tod
   overlayEnabled: true,
 };
 
@@ -215,6 +216,9 @@ window.addEventListener('keydown', (e) => {
 
   // Angriff
   if (e.code === 'Space' && !e.repeat) input.attack = true;
+
+  // Neustart
+  if ((e.code === 'KeyR' || e.code === 'Enter') && !e.repeat) input.restart = true;
 
 
     if (!e.repeat && MODE === 'grid') {
@@ -277,20 +281,25 @@ function drawOverlay(alpha) {
 // ---- SIMULATION: ein fester Schritt von 1/60 s -------------
 // Hier wird der Spielzustand verändert, sonst nirgends.
 function simulationStep() {
-    for (const o of objects) {
-      o.prevX = o.x;
-      o.prevY = o.y;
-    }
+  for (const o of objects) {
+    o.prevX = o.x;
+    o.prevY = o.y;
+  }
+  if (game.state === 'dead') {
+    // Held tot: Die Welt steht still, nur R oder Enter startet neu (FA-3-4)
+    if (input.restart) buildLevel(1);
+  } else {
     for (const o of objects) {
       o.simulate(STEP);
     }
-    
-    removeDead();   // Tote erst nach der Schleife entfernen, nicht mittendrin
-  
-    // Einmal-Impulse sind verbraucht
-    input.step = null;
-    input.roll = false;
-    input.attack = false;
+
+    removeDead();
+  }
+  // Einmal-Impulse sind verbraucht, auch wenn der Held tot ist
+  input.step = null;
+  input.roll = false;
+  input.attack = false;
+  input.restart = false;
 }
 
 // ---- GAME LOOP ---------------------------------------------

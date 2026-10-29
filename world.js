@@ -8,6 +8,9 @@ const objects = [];
 
 let player = null;   // Held wird bei jedem Level neu erzeugt
 
+// Spielzustand: 'play' oder 'dead'. Ohne diese Zeile wäre game dein Canvas (id="game").
+const game = { state: 'play' };
+
 // Aufbau der Ebene: Spalte und Reihe jedes Objekts. Die Karte selbst
 // steht in game.js. Prozedurale Ebenen folgen erst in Block 4.
 const LEVEL = {
@@ -96,6 +99,8 @@ function removeDead() {
 // ---------- Ebene aufbauen ----------
 function buildLevel(depth) {
   objects.length = 0;
+
+  game.state = 'play';
 
   // Held (Bewegung, Rolle, Steuerung)
   player = new Entity(LEVEL.hero[0], LEVEL.hero[1], HERO_SPRITE)
