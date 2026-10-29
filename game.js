@@ -284,10 +284,13 @@ function simulationStep() {
     for (const o of objects) {
       o.simulate(STEP);
     }
-  // Einmal-Impulse sind verbraucht
-  input.step = null;
-  input.roll = false;
-  input.attack = false;
+    
+    removeDead();   // Tote erst nach der Schleife entfernen, nicht mittendrin
+  
+    // Einmal-Impulse sind verbraucht
+    input.step = null;
+    input.roll = false;
+    input.attack = false;
 }
 
 // ---- GAME LOOP ---------------------------------------------

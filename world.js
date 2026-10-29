@@ -85,6 +85,13 @@ function foundExit(e){
   }
 }
 
+// Entfernt tote Objekte. Rückwärts, weil splice alles dahinter nach vorne schiebt.
+function removeDead() {
+  for (let i = objects.length - 1; i >= 0; i--) {
+    if (objects[i].dead) objects.splice(i, 1);
+  }
+}
+
 
 // ---------- Ebene aufbauen ----------
 function buildLevel(depth) {

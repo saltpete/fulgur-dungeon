@@ -18,6 +18,7 @@ function damage(t, amount, dcol = 0, drow = 0) {
   t.hp = Math.max(0, t.hp - amount);
   t.invuln = t.invulnTime || 0;                   // Schutzzeit, falls die Figur eine hat
   knockback(t, dcol, drow);
+  if (t.hp <= 0) die(t);
   return true;
 }
 
@@ -28,6 +29,10 @@ function knockback(t, dcol, drow) {
   tryMove(t, dcol, drow);
 }
 
+// Tod: Das Objekt wird nur markiert und erst nach dem Schritt entfernt
+function die(t) {
+  t.dead = true;
+}
 
 //
 
