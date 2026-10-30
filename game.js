@@ -273,8 +273,11 @@ function drawOverlay(alpha) {
   if (orc) {
     ctx.textAlign = 'right';
     ctx.fillText(`Ork: Leben ${orc.hp}/${orc.maxHp}`, W - 12, H - 46);
+    const p = perceive(orc);
+    ctx.fillText(`Abstand ${Math.round(p.dist)} px · daneben: ${p.adjacent ? 'ja' : 'nein'} · sieht: ${p.sees ? 'ja' : 'nein'}`, W - 12, H - 32);
     ctx.textAlign = 'left';
   }
+
 }
 
 
