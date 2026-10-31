@@ -60,9 +60,9 @@ enemyAttack.src = 'assets/orc1_attack_with_shadow.png'            // craftpix.ne
 
 // Schleim
 const slimeWalk = new Image();
-slimeWalk.src = 'assets/Slime2_walk_with_shadow.png';              // craftpix.net (License: Free for personal and commercial use, with credit to craftpix.net)
+slimeWalk.src = 'assets/Slime2_Walk_with_shadow.png';              // craftpix.net (License: Free for personal and commercial use, with credit to craftpix.net)
 const slimeIdle = new Image();
-slimeIdle.src = 'assets/Slime2_idle_with_shadow.png';              // craftpix.net (License: Free for personal and commercial use, with credit to craftpix.net)
+slimeIdle.src = 'assets/Slime2_Idle_with_shadow.png';              // craftpix.net (License: Free for personal and commercial use, with credit to craftpix.net)
 
 // Sprites
 //Held
