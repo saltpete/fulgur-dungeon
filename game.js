@@ -272,13 +272,14 @@ function drawOverlay(alpha) {
   const orc = objects.find(o => o.kind === 'orc');
   if (orc) {
     ctx.textAlign = 'right';
-    ctx.fillText(`Ork: Leben ${orc.hp}/${orc.maxHp}`, W - 12, H - 46);
+    ctx.fillText(`Ork: ${STATE_NAMES[orc.state]} · Leben ${orc.hp}/${orc.maxHp}`, W - 12, H - 46);;
     const p = perceive(orc);
     ctx.fillText(`Abstand ${Math.round(p.dist)} px · daneben: ${p.adjacent ? 'ja' : 'nein'} · sieht: ${p.sees ? 'ja' : 'nein'}`, W - 12, H - 32);
     ctx.textAlign = 'left';
   }
 
 }
+
 
 
 // ---- SIMULATION: ein fester Schritt von 1/60 s -------------
@@ -497,38 +498,6 @@ class GridMovement {
     e.moving = Math.abs(zielX - e.x) > 3 || Math.abs(zielY - e.y) > 3;
   }
 }
-
-// Gegner verfolgt Spieler
-class ChaseControl {
-  constructor(target, interval) {
-    this.target = target;
-    this.interval = interval;
-    this.timer = 0;
-  }
-  update(e, dt) {
-    // Timer runterzaehlen, bei > 0 raus
-    this.timer -= dt;
-    if (this.timer > 0) return;
-    this.timer = this.interval;
-    // Timer zuruecksetzen
-    // Abstand in Spalten und Reihen zum Ziel
-    const dcol = this.target.col - e.col;
-    const drow = this.target.row - e.row;
-    
-    // Wenn der Gegner den Spieler erreicht, keine weitere Bewegung
-    if (Math.abs(dcol) + Math.abs(drow) <= 1) return;; // Wenn der Gegner den Spieler erreicht, keine weitere Bewegung
-
-    // groessere Achse waehlen
-    if (Math.abs(dcol) > Math.abs(drow)) {
-      if (dcol < 0) { e.facing = 'left';  tryMove(e, -1, 0); } // nach links
-      else          { e.facing = 'right'; tryMove(e,  1, 0); } // nach rechts
-    } else {
-      if (drow < 0) { e.facing = 'up';    tryMove(e,  0,-1); } // nach oben
-      else          { e.facing = 'down';  tryMove(e,  0, 1); } // nach unten
-    }
-  }
-}
-
 
 // Start erst, wenn alle Skripte geladen sind
 window.addEventListener('DOMContentLoaded', () => {

@@ -16,6 +16,7 @@ class Health {
 function damage(t, amount, dcol = 0, drow = 0) {
   if (t.hp <= 0 || t.invuln > 0) return false;   // schon bei 0 oder gerade geschützt
   t.hp = Math.max(0, t.hp - amount);
+  t.wasHit = true;                                // der Gegner merkt das beim Wahrnehmen
   t.invuln = t.invulnTime || 0;                   // Schutzzeit, falls die Figur eine hat
   knockback(t, dcol, drow);
   if (t.hp <= 0) die(t);

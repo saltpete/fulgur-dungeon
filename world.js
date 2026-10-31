@@ -4,7 +4,7 @@
 // ============================================================
 
 // Alle Figuren  in einem Array
-const objects = [];   
+const objects = [];
 
 let player = null;   // Held wird bei jedem Level neu erzeugt
 
@@ -17,6 +17,7 @@ const LEVEL = {
   hero:    [2, 2],
   crates:  [[6, 3], [4, 5], [11, 4]],          // schiebbar
   orc:     [16, 10],
+  orcPatrol: [[13, 10], [20, 10]],             // Wegpunkte des Orks
 };
 
 // ---------- Widerstand: Was ist ein Hindernis? ----------
@@ -120,9 +121,14 @@ function buildLevel(depth) {
   const orc = new Entity(LEVEL.orc[0], LEVEL.orc[1], ENEMY_SPRITE)
   .add(new ChaseControl(player, 0.5))   // verfolgt den Helden, alle 0.5 s ein Schritt
   .add(new GridMovement())              // Schreibt x,y^
-  .add(new Health());                   // Ork kann Schaden nehmen
+  .add(new Health())                   // Ork kann Schaden nehmen
+  .add(new EnemyBrain(decide, {
+  patrol: new Patrol(LEVEL.orcPatrol, 0.45),   // Wegpunkte und Geschwindigkeit(1 Schritt alle 0.45 Sekungen)
+  chase: new Chase(0.3),                       // auf der Jagd schneller (Alle 0.3 Sekunden einen Schritt)
+  }));
   orc.solid = true;
   orc.kind = 'orc';                     // damit das HUD weiss, dass es ein Ork ist
+  orc.state = 'patrol';                 // Startzustand
   orc.maxHp = 3;                        // hält 3 Treffer aus
   orc.hp = orc.maxHp;
   objects.push(orc);

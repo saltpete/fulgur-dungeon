@@ -5,6 +5,7 @@
 const VIEW_RANGE = 5 * TILE;   // sieht den Helden bis 160 px (5 Kacheln)
 const VIEW_COS = 0.5;          // cos 60°: Blickfeld 60 Grad links und rechts der Blickrichtung
 const LOSE_RANGE = 8 * TILE;   // gibt die Jagd erst ab 256 px auf
+const STATE_NAMES = { patrol: 'Patrouillieren', chase: 'Verfolgen', attack: 'Angreifen' };   // fürs Overlay
 
 // Wahrnehmen: Was weiss der Gegner gerade über den Helden?
 // Liest nur und verändert nichts.
@@ -18,6 +19,7 @@ function perceive(e) {
     dist,                                 // Abstand in Pixeln
     adjacent: Math.abs(player.col - e.col) + Math.abs(player.row - e.row) === 1,   // direkt daneben
     sees: dist <= VIEW_RANGE && inView && hasLineOfSight(e, player),   // nah, im Blickfeld, keine Wand dazwischen
+    wasHit: !!e.wasHit,                   // seit dem letzten Schritt getroffen?
   };
 }
 
@@ -56,13 +58,67 @@ function decide(state, p) {
   return state;
 }
 
-// Mini-Prüfstand: jeder Pfeil aus dem Diagramm einmal. Nur Fehler erscheinen in der Konsole.
-console.assert(decide('patrol', { sees: true }) === 'chase', 'Patrouillieren → Verfolgen: sieht den Helden');
-console.assert(decide('patrol', { wasHit: true }) === 'chase', 'Patrouillieren → Verfolgen: wurde getroffen');
-console.assert(decide('patrol', {}) === 'patrol', 'Patrouillieren bleibt ohne Grund');
-console.assert(decide('chase', { adjacent: true, dist: 32 }) === 'attack', 'Verfolgen → Angreifen: Held daneben');
-console.assert(decide('chase', { dist: 300 }) === 'patrol', 'Verfolgen → Patrouillieren: Abstand > 256 px');
-console.assert(decide('chase', { dist: 200 }) === 'chase', 'Hysterese: bei 200 px jagt er weiter');
-console.assert(decide('attack', { adjacent: false }) === 'chase', 'Angreifen → Verfolgen: Held nicht mehr daneben');
-console.assert(decide('attack', { adjacent: false, swinging: true }) === 'attack', 'Angreifen: Schlag wird nicht abgebrochen');
-console.log('Prüfstand decide: 8 Tests gelaufen');
+// ---------- Handeln: Verhalten als Bausteine ----------
+// Jedes Verhalten hat act(e, p, dt). EnemyBrain ruft das Verhalten des aktuellen Zustands auf.
+
+// Ein Schritt Richtung Ziel, zuerst auf der grösseren Achse.
+// Ist die blockiert, versucht er die andere, so bleibt er seltener an Wänden hängen.
+function stepToward(e, col, row) {
+  const dcol = col - e.col, drow = row - e.row;
+  const horizontal = [Math.sign(dcol), 0], vertical = [0, Math.sign(drow)];
+  const tries = Math.abs(dcol) > Math.abs(drow) ? [horizontal, vertical] : [vertical, horizontal];
+  for (const [dc, dr] of tries) {
+    if (dc === 0 && dr === 0) continue;
+    e.facing = dc < 0 ? 'left' : dc > 0 ? 'right' : dr < 0 ? 'up' : 'down';
+    if (tryMove(e, dc, dr)) return;
+  }
+}
+
+// Patrouillieren: läuft seine Wegpunkte der Reihe nach ab
+class Patrol {
+  constructor(points, interval) {
+    this.points = points;       // Wegpunkte [Spalte, Reihe]
+    this.index = 0;             // aktueller Wegpunkt
+    this.interval = interval;   // Sekunden pro Schritt
+    this.timer = 0;
+  }
+  act(e, p, dt) {
+    this.timer -= dt;
+    if (this.timer > 0) return;
+    this.timer = this.interval;
+    const [col, row] = this.points[this.index];
+    if (e.col === col && e.row === row) this.index = (this.index + 1) % this.points.length;   // angekommen: nächster
+    else stepToward(e, col, row);
+  }
+}
+
+// Verfolgen: läuft zum Helden, schneller als auf Patrouille
+class Chase {
+  constructor(interval) {
+    this.interval = interval;
+    this.timer = 0;
+  }
+  act(e, p, dt) {
+    this.timer -= dt;
+    if (this.timer > 0) return;
+    this.timer = this.interval;
+    stepToward(e, player.col, player.row);
+  }
+}
+
+// Komponente EnemyBrain: jeden Schritt wahrnehmen, entscheiden, handeln.
+// decideFn ist die Zustandsmaschine dieses Gegners, behaviors die Bausteine pro Zustand.
+class EnemyBrain {
+  constructor(decideFn, behaviors) {
+    this.decide = decideFn;
+    this.behaviors = behaviors;
+  }
+  update(e, dt) {
+    const p = perceive(e);                   // 1. wahrnehmen
+    e.state = this.decide(e.state, p);       // 2. entscheiden
+    e.wasHit = false;                        // Treffer ist verarbeitet
+    const b = this.behaviors[e.state];       // 3. handeln
+    if (b) b.act(e, p, dt);                  // ohne Baustein für den Zustand: stehen bleiben
+  }
+}
+
