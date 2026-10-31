@@ -13,8 +13,9 @@ function randomBetween(min, max) {
 // color: Buchstabe aus der PALETTE in sprites.js, wie bei den Pixelrastern.
 
 const SPARKS = { count: 12, speed: [80, 220], life: [0.2, 0.45], gravity: 300, drag: 0.15, size: 3, color: 'y' };   // Gold
-const BLOOD = { count: 14, speed: [60, 180], life: [0.25, 0.5], gravity: 500, drag: 0.2, size: 3, color: 'p' };   // Rot wie die Herzen, fällt schneller
-const SPLINTERS = { count: 20, speed: [80, 200], life: [0.3, 0.6], gravity: 400, drag: 0.3, size: 4, color: 'B' };   // Holz der Kiste
+const BLOOD = { count: 14, speed: [60, 180], life: [0.25, 0.5], gravity: 500, drag: 0.2, size: 3, color: 'p' };     // Rot wie die Herzen, fällt schneller
+const SPLINTERS = { count: 20, speed: [80, 200], life: [0.3, 0.6], gravity: 400, drag: 0.3, size: 4, color: 'B' };  // Holz der Kiste
+const DUST = { count: 16, speed: [40, 120], life: [0.3, 0.6], gravity: -30, drag: 0.1, size: 4, color: 's' };       // Staub beim Abrollen, steigt leicht auf
 
 
 const parts = [];   // alle Teilchen: {x, y, vx, vy, life, max, r}

@@ -488,7 +488,7 @@ class RollControl {
   }
   update(e, dt) {
     this.timer=Math.max(0, this.timer - dt);
-    e.rollReady = 1 - this.timer / this.cooldown;   // 0 bis 1, für die Anzeige   // neu
+    e.rollReady = 1 - this.timer / this.cooldown;   // 0 bis 1, für die Anzeige
     if (!input.roll || this.timer > 0 || e.attacking) return;
 
     //Richtung: gedrückte Pfeiltaste sonst Blickrichtung
@@ -503,6 +503,7 @@ class RollControl {
       steps++;
     }
     if (steps > 0) {
+      burst(e.x + TILE / 2, e.y + TILE - 6, DUST);   // Staubwolke, wo er abrollt
       e.moving = true;
       this.timer = this.cooldown; //Cooldown nur, wenn die Rolle erfolgreich war
       input.step = null; // Impuls verbrauchen

@@ -29,8 +29,8 @@ const PALETTE = {
   m: '#aeb6c4',   // Stein hell
   M: '#5b6475',   // Stein dunkel
   g: '#3b3f4c',   // Stein sehr dunkel
-  u: '#8fd3ff',   // Blitz hell     // neu
-  U: '#3f7fd9',   // Blitz dunkel   // neu
+  u: '#8fd3ff',   // Blitz hell
+  U: '#3f7fd9',   // Blitz dunkel
 };
 
 const PIX = {
