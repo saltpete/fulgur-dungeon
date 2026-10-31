@@ -361,8 +361,12 @@ function frame(now) {
     const dy = o.prevY + (o.y - o.prevY) * alpha;
     o.render(ctx, dx, dy, frameTime);
   }
+  // Lebensbalken über Gegner
+  drawHealthBars(alpha);   // Lebensbalken über den Gegnern
 
+  // Partikel
   drawParticles();   // noch im Shake, die Funken gehören zur Welt
+  
   ctx.restore();
   drawHud();
 

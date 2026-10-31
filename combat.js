@@ -13,6 +13,7 @@ class Health {
 
 // Schaden für alle Treffer. (dcol, drow): Richtung des Treffers, für den Rückstoss.
 // Liefert true, wenn der Treffer zählt.
+// TODO Trigger Hurt sprites or Death sprites
 function damage(t, amount, dcol = 0, drow = 0) {
   if (t.hp <= 0 || t.invuln > 0) return false;   // schon bei 0 oder gerade geschützt
   t.hp = Math.max(0, t.hp - amount);

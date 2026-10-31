@@ -58,3 +58,22 @@ function drawCooldown(label, ready, x, y) {
   ctx.fillText(label, x + w / 2, y + 11);
   ctx.textAlign = 'left';
 }
+
+// Lebensbalken über jedem Gegner (FA-3-7): ein Feld pro Leben, rot voll, grau leer
+function drawHealthBars(alpha) {
+  for (const o of objects) {
+    if (o === player || !o.maxHp) continue;            // nur Gegner mit maxHp
+    const x = o.prevX + (o.x - o.prevX) * alpha;        // gleiche Stelle wie die Figur
+    const y = o.prevY + (o.y - o.prevY) * alpha;
+    const seg = 8;                                      // Breite pro Leben in px
+    const w = o.maxHp * seg;
+    const bx = Math.round(x + (TILE - w) / 2);
+    const by = Math.round(y - 38);                      // über dem Kopf
+    ctx.fillStyle = PALETTE.k;
+    ctx.fillRect(bx - 1, by - 1, w + 1, 6);             // dunkler Rahmen
+    for (let i = 0; i < o.maxHp; i++) {
+      ctx.fillStyle = i < o.hp ? PALETTE.p : PALETTE.e;
+      ctx.fillRect(bx + i * seg, by, seg - 1, 4);
+    }
+  }
+}

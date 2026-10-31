@@ -106,6 +106,7 @@ function makeCrate(col, row) {
 }
 
 // Münze: Item ohne Widerstand. Beim Berühren zählt sie und verschwindet.
+// TODO: Je nachdem was makeCoin triggert unterschiedlich viele Coins erstellen (Bosse / Kisten (unterschiedliche Anzahl)) evtl. durch Director gesteuert
 function makeCoin(col, row) {
   const o = new Entity(col, row);
   o.kind = 'coin';
