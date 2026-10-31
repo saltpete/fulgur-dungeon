@@ -3,17 +3,25 @@
 // =====================================================
 // Liest nur Zustand und zeichnet ihn, keine Änderungen am Zustand.
 
+let banner = null;   // { text, t }
+function showBanner(text) {
+  banner = { text, t: 2 };
+}
+
+
 // Trefferpunkte als Herzen oben links
-function drawHud() {
+function drawHud(dt) {
     for (let i = 0; i < player.maxHp; i++) {
         const art = i < player.hp ? PIX.heart : PIX.heartEmpty;
         drawPixel(ctx, art, 10 + i * 24, 10);
     }
-    // Rechts oben: Münzen
-    drawPixel(ctx, PIX.coin, W - 92, 2);
-    ctx.textAlign = 'left';
+    // Rechts oben: Ebene und Münzen
+    ctx.textAlign = 'right';
     ctx.font = 'bold 16px sans-serif';
     ctx.fillStyle = '#f4efe6';
+    ctx.fillText('Ebene ' + game.depth, W - 104, 25);
+    drawPixel(ctx, PIX.coin, W - 92, 2);
+    ctx.textAlign = 'left';
     ctx.fillText(String(game.coins), W - 58, 25);
 
     // Durchlauf vorbei (FA-3-3, FA-3-4)

@@ -9,7 +9,7 @@ const objects = [];
 let player = null;   // Held wird bei jedem Level neu erzeugt
 
 // Spielzustand: 'play' oder 'dead'. Ohne diese Zeile wäre game dein Canvas (id="game").
-const game = { state: 'play', coins: 0 };   // Münzen überleben den Tod 
+const game = { state: 'play', coins: 0, depth: 1 };   // Münzen überleben den Tod
 
 // Aufbau der Ebene: Spalte und Reihe jedes Objekts. Die Karte selbst
 // steht in game.js. Prozedurale Ebenen folgen erst in Block 4.
@@ -18,6 +18,7 @@ const LEVEL = {
   crates:  [[6, 3], [4, 5], [11, 4]],          // schiebbar
   orc:     [16, 10],
   orcPatrol: [[13, 10], [20, 10]],             // Wegpunkte des Orks
+    stairs:  [21, 10],                           // Treppe zur nächsten Ebene
 };
 
 // ---------- Widerstand: Was ist ein Hindernis? ----------
@@ -56,7 +57,6 @@ function tryMove(e, dcol, drow, interact = false) {
   }
   // 3. Zustand ändern
   e.col = nc; e.row = nr;
-  foundExit(e);   // Held auf Ausgang? Dann kann er in den nächsten Bereich wechseln.
   return true;
 }
 
@@ -117,12 +117,15 @@ function makeCoin(col, row) {
   return o;
 }
 
-
-// Wenn die Figur auf dem Ausgang steht, kann sie in den nächsten Bereich wechseln.
-function foundExit(e){
-  if (map[e.row][e.col] === 2 && e === player) {
-    console.log("Found exit, could leave to next Area");
-  }
+// Treppe: Zone über der Treppenkachel. Beim Berühren geht es eine Ebene tiefer.
+// Nur ein Merker: buildLevel darf nicht mitten in der Schleife über objects laufen.
+function makeStairs(col, row) {
+  const o = new Entity(col, row);
+  o.kind = 'stairs';
+  o.layer = 0;                       // am Boden
+  o.onTouch = () => { game.nextLevel = true; };
+  o.draw = () => {};                 // die Karte zeichnet die Treppe
+  return o;
 }
 
 // Entfernt tote Objekte. Rückwärts, weil splice alles dahinter nach vorne schiebt.
@@ -141,6 +144,8 @@ function buildLevel(depth) {
   objects.length = 0;
 
   game.state = 'play';
+  game.depth = depth;
+  game.nextLevel = false;
 
   // Held (Bewegung, Rolle, Steuerung)
   player = new Entity(LEVEL.hero[0], LEVEL.hero[1], HERO_SPRITE)
@@ -174,6 +179,7 @@ function buildLevel(depth) {
   objects.push(orc);
 
   for (const [c, r] of LEVEL.crates)  objects.push(makeCrate(c, r));
+    objects.push(makeStairs(...LEVEL.stairs));
 
   lastBumps = 0;   // neuer Held beginnt wieder bei 0 Rempeleien
   lastSwings = 0;

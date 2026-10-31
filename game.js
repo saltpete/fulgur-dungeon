@@ -96,7 +96,7 @@ const map = [   // 15 Reihen, 25 Spalten. 0 Boden, 1 Wand, 2 Treppe
 
 const TILESET = {
   0: [1, 6],      // Boden, Grundkachel
-  2: [11, 8],     // Treppe
+  2: [10, 8],     // Treppe
 };
 
 // Bodenvarianten mit Fugen, rein optisch
@@ -159,6 +159,7 @@ const shake = {
 
 let lastBumps = 0;
 let lastSwings = 0;     //Shake beim Angriff
+let lastDepth = 0;    // zuletzt angezeigte Ebene, für das Banner
 
 function triggerShake(mag  = 4, dur = 0.15){
   if (shake.timer > 0) return; // Wenn bereits ein Shake läuft, nicht überschreiben
@@ -298,6 +299,7 @@ function simulationStep() {
     }
     checkTriggers();   // Münzen und Zonen: berührt der Held etwas?
     removeDead();
+    if (game.nextLevel) buildLevel(game.depth + 1);   // Treppe erreicht
   }
   // Einmal-Impulse sind verbraucht, auch wenn der Held tot ist
   input.step = null;
@@ -327,6 +329,12 @@ function frame(now) {
     triggerShake(1.5, 0.04); //leichter Shake
     lastSwings = player.swings;
   }
+
+  if (game.depth !== lastDepth) {   // neue Ebene: Banner zeigen
+  showBanner('Ebene ' + game.depth);
+  lastDepth = game.depth;
+  }
+
   updateShake(frameTime);
 
   const alpha = accumulator / STEP; // Anteil bis zum nächsten Schritt, für die Interpolation

@@ -25,7 +25,10 @@ const PALETTE = {
   w: '#fff6d5',   // Glanz
   e: '#3a3346',    // leeres Herz
   y: '#f2c14e',   // Gold
-  Y: '#b8862b'    // Gold dunkel
+  Y: '#b8862b',    // Gold dunkel
+  m: '#aeb6c4',   // Stein hell
+  M: '#5b6475',   // Stein dunkel
+  g: '#3b3f4c'    // Stein sehr dunkel
 };
 
 const PIX = {
@@ -83,6 +86,24 @@ const PIX = {
     '................',
     '................',
     '................',
+    '................'
+  ],
+    stairs: [
+    'kkkkkkkkkkkkkkkk',
+    'kmmmmmmmmmmmmmmk',
+    'kMMMMMMMMMMMMMMk',
+    'kkkkkkkkkkkkkkkk',
+    '.kmmmmmmmmmmmmk.',
+    '.kMMMMMMMMMMMMk.',
+    '.kkkkkkkkkkkkkk.',
+    '..kmmmmmmmmmmk..',
+    '..kMMMMMMMMMMk..',
+    '..kkkkkkkkkkkk..',
+    '...kmmmmmmmmk...',
+    '...kMMMMMMMMk...',
+    '...kkkkkkkkkk...',
+    '....kggggggk....',
+    '....kkkkkkkk....',
     '................'
   ],
 };
