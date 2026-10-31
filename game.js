@@ -158,7 +158,7 @@ const shake = {
 }
 
 let lastBumps = 0;
-let lastSwings = 0;     //Shake beim Angriff
+let lastHurts = 0;    // wie lastBumps, für den Shake, wenn der Held getroffen wird
 let lastDepth = 0;    // zuletzt angezeigte Ebene, für das Banner
 
 function triggerShake(mag  = 4, dur = 0.15){
@@ -325,9 +325,9 @@ function frame(now) {
     triggerShake(4, 0.15);
     lastBumps = player.bumps;
   }
-  if ((player.swings || 0 ) > lastSwings){
-    triggerShake(1.5, 0.04); //leichter Shake
-    lastSwings = player.swings;
+  if ((player.hurts || 0) > lastHurts) {
+    triggerShake(4, 0.2);   // Held getroffen: das Bild wackelt
+    lastHurts = player.hurts;
   }
 
   if (game.depth !== lastDepth) {   // neue Ebene: Banner zeigen

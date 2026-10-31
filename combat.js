@@ -17,6 +17,7 @@ function damage(t, amount, dcol = 0, drow = 0) {
   if (t.hp <= 0 || t.invuln > 0) return false;   // schon bei 0 oder gerade geschützt
   t.hp = Math.max(0, t.hp - amount);
   t.wasHit = true;                                // der Gegner merkt das beim Wahrnehmen
+  if (t === player) t.hurts = (t.hurts || 0) + 1; // Screenshake wenn der Held getroffen wird
   t.invuln = t.invulnTime || 0;                   // Schutzzeit, falls die Figur eine hat
   if (t.hp <= 0) die(t);                          // tot: kein Rückstoss mehr, die Beute fällt an Ort und Stelle
   else knockback(t, dcol, drow);
@@ -58,7 +59,6 @@ class AttackControl {
         if (input.attack && this.timer <= 0) {
             this.timer = ATTACK_TIME;
             this.hitDone = false;
-            e.swings =  (e.swings || 0) + 1; // frame() lässt das Bild kurz wackeln
         }
         // Angriff läuft, Timer runterzählen
         if (this.timer > 0) {
