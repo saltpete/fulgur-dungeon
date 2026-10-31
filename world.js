@@ -138,6 +138,15 @@ function removeDead() {
   }
 }
 
+// Verschiebt eine Position zufällig um höchstens ein Feld, wenn dort freier Boden ist.
+// So sieht jede Ebene etwas anders aus, die Karte selbst bleibt gleich (generiert wird erst in Block 4).
+function randomizePosition([col, row]) {
+  const c = col + Math.floor(Math.random() * 3) - 1;   // -1, 0 oder +1
+  const r = row + Math.floor(Math.random() * 3) - 1;
+  if (isBlocked(c, r, null) || map[r][c] === 2) return [col, row];   // Wand, Objekt oder Treppe: bleibt
+  return [c, r];
+}
+
 
 // ---------- Ebene aufbauen ----------
 function buildLevel(depth) {
@@ -161,12 +170,16 @@ function buildLevel(depth) {
   player.invulnTime = 1;            // nach einem Treffer 1 s geschützt
   objects.push(player);
   
+    // Randomisierung der Wegpunkte
+  const dr = depth > 1 ? Math.floor(Math.random() * 5) - 2 : 0;   // -2 bis +2
+  const patrol = LEVEL.orcPatrol.map(([c, r]) => [c, r + dr]);
+
   // Ork wie in Block 2, jetzt fest (solid). Noch kein kind = 'orc', sonst stürzt hud.js ab
   const orc = new Entity(LEVEL.orc[0], LEVEL.orc[1], ENEMY_SPRITE)
   .add(new GridMovement())              // Schreibt x,y^
   .add(new Health())                   // Ork kann Schaden nehmen
   .add(new EnemyBrain(decide, {
-  patrol: new Patrol(LEVEL.orcPatrol, 0.45),   // Wegpunkte und Geschwindigkeit(1 Schritt alle 0.45 Sekungen)
+    patrol: new Patrol(patrol, 0.45),          //  Wegpunkte und Geschwindigkeit(1 Schritt alle 0.45 Sekungen)
   chase: new Chase(0.3),                       // auf der Jagd schneller (Alle 0.3 Sekunden einen Schritt)
   attack: new MeleeAttack(1.2, 0.45, 1),       // 1.2 s pro Schlag, trifft nach 0.45 s, 1 Herz
   }));
@@ -178,8 +191,14 @@ function buildLevel(depth) {
   orc.loot = true;                      // hinterlässt eine Münze
   objects.push(orc);
 
-  for (const [c, r] of LEVEL.crates)  objects.push(makeCrate(c, r));
-    objects.push(makeStairs(...LEVEL.stairs));
+  // Kisten position varieren (maximal 1 Feld)
+  for (const pos of LEVEL.crates) {
+    const [c, r] = depth > 1 ? randomizePosition(pos) : pos;
+    objects.push(makeCrate(c, r));
+  }
+  
+  //Treppen hinzufügen
+  objects.push(makeStairs(...LEVEL.stairs));
 
   lastBumps = 0;   // neuer Held beginnt wieder bei 0 Rempeleien
   lastSwings = 0;
