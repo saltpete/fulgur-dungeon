@@ -119,12 +119,12 @@ function buildLevel(depth) {
   
   // Ork wie in Block 2, jetzt fest (solid). Noch kein kind = 'orc', sonst stürzt hud.js ab
   const orc = new Entity(LEVEL.orc[0], LEVEL.orc[1], ENEMY_SPRITE)
-  .add(new ChaseControl(player, 0.5))   // verfolgt den Helden, alle 0.5 s ein Schritt
   .add(new GridMovement())              // Schreibt x,y^
   .add(new Health())                   // Ork kann Schaden nehmen
   .add(new EnemyBrain(decide, {
   patrol: new Patrol(LEVEL.orcPatrol, 0.45),   // Wegpunkte und Geschwindigkeit(1 Schritt alle 0.45 Sekungen)
   chase: new Chase(0.3),                       // auf der Jagd schneller (Alle 0.3 Sekunden einen Schritt)
+  attack: new MeleeAttack(1.2, 0.45, 1),       // 1.2 s pro Schlag, trifft nach 0.45 s, 1 Herz
   }));
   orc.solid = true;
   orc.kind = 'orc';                     // damit das HUD weiss, dass es ein Ork ist

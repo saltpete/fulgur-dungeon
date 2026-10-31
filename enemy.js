@@ -20,6 +20,7 @@ function perceive(e) {
     adjacent: Math.abs(player.col - e.col) + Math.abs(player.row - e.row) === 1,   // direkt daneben
     sees: dist <= VIEW_RANGE && inView && hasLineOfSight(e, player),   // nah, im Blickfeld, keine Wand dazwischen
     wasHit: !!e.wasHit,                   // seit dem letzten Schritt getroffen?
+    swinging: !!e.swinging,               // mitten in einem Schlag?
   };
 }
 
@@ -122,3 +123,36 @@ class EnemyBrain {
   }
 }
 
+// Angreifen: dreht sich zum Helden, holt aus und schlägt zu. Getroffen wird nur,
+// wer beim Zuschlagen noch direkt vor ihm steht. Wer rechtzeitig wegrollt, weicht aus.
+class MeleeAttack {
+  constructor(time, hitAt, amount) {
+    this.time = time;       // ganzer Schlag in Sekunden
+    this.hitAt = hitAt;     // nach so vielen Sekunden trifft er
+    this.amount = amount;   // Schaden pro Treffer
+    this.timer = 0;         // läuft während des Schlags von time auf 0
+    this.hitDone = true;    // Treffer dieses Schlags schon ausgewertet?
+  }
+  act(e, p, dt) {
+    if (this.timer <= 0) {                // neuer Schlag
+      faceToward(e, player);
+      this.timer = this.time;
+      this.hitDone = false;
+    }
+    this.timer -= dt;
+    if (!this.hitDone && this.time - this.timer >= this.hitAt) {
+      this.hitDone = true;
+      const [dcol, drow] = DIRV[e.facing];
+      if (player.col === e.col + dcol && player.row === e.row + drow) damage(player, this.amount, dcol, drow);
+    }
+    e.swinging = this.timer > 0;                                // decide bricht den Schlag nicht ab
+    e.attackAnim = e.swinging ? 1 - this.timer / this.time : 0; // Fortschritt 0 bis 1 fürs Bild
+  }
+}
+
+// Dreht e zum Ziel t, auf der grösseren Achse
+function faceToward(e, t) {
+  const dcol = t.col - e.col, drow = t.row - e.row;
+  if (Math.abs(dcol) > Math.abs(drow)) e.facing = dcol < 0 ? 'left' : 'right';
+  else e.facing = drow < 0 ? 'up' : 'down';
+}

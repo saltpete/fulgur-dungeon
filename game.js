@@ -66,8 +66,8 @@ const HERO_SPRITE = {
 };
 
 const ENEMY_SPRITE = {
-  walk: enemyWalk, idle: enemyIdle,
-  walkFrames: ENEMY_WALK_FRAMES, idleFrames: ENEMY_IDLE_FRAMES,
+  walk: enemyWalk, idle: enemyIdle, attack: enemyAttack,
+  walkFrames: ENEMY_WALK_FRAMES, idleFrames: ENEMY_IDLE_FRAMES, attackFrames: 8,
   rows: { down: 0, up: 1, left: 2, right: 3 }   // Ork-Sheet ist anders sortiert
 };
 
