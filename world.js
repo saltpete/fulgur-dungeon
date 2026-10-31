@@ -175,6 +175,7 @@ function randomizePosition([col, row]) {
 
 // ---------- Ebene aufbauen ----------
 function buildLevel(depth) {
+  const hpBefore = depth > 1 ? player.hp : null  // HP speichern wenn Level grösser als 1
   objects.length = 0;
 
   game.state = 'play';
@@ -193,7 +194,7 @@ function buildLevel(depth) {
   player.hitFx = BLOOD;
   player.solid = true;
   player.maxHp = 5            // 5 Herzen
-  player.hp = player.maxHp;   // startet mit voller Gesundheit
+  player.hp =   player.hp = hpBefore ?? player.maxHp;   // nimmt seine Leben mit, nur Ebene 1 startet voll
   player.invulnTime = 1;            // nach einem Treffer 1 s geschützt
   objects.push(player);
   
