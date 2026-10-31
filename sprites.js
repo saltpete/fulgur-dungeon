@@ -20,15 +20,17 @@ const PALETTE = {
   s: '#d6dbe4',   // Stachel hell
   S: '#7a8294',   // Stachel dunkel
   g: '#3b3f4c',   // Bodenplatte
-  e: '#3a3346',    // leeres Herz
+  e: '#3a3346',   // leeres Herz
   p: '#e04555',   // Herz rot
   w: '#fff6d5',   // Glanz
-  e: '#3a3346',    // leeres Herz
+  e: '#3a3346',   // leeres Herz
   y: '#f2c14e',   // Gold
-  Y: '#b8862b',    // Gold dunkel
+  Y: '#b8862b',   // Gold dunkel
   m: '#aeb6c4',   // Stein hell
   M: '#5b6475',   // Stein dunkel
-  g: '#3b3f4c'    // Stein sehr dunkel
+  g: '#3b3f4c',   // Stein sehr dunkel
+  u: '#8fd3ff',   // Blitz hell     // neu
+  U: '#3f7fd9',   // Blitz dunkel   // neu
 };
 
 const PIX = {
@@ -49,6 +51,16 @@ const PIX = {
     '.kBBBBBBBBBBBBk.',
     '.kkkkkkkkkkkkkk.',
     '................'
+  ],
+    bolt: [
+    '...UU...',
+    '..UuuU..',
+    '.UuwwuU.',
+    'UuwwwwuU',
+    'UuwwwwuU',
+    '.UuwwuU.',
+    '..UuuU..',
+    '...UU...'
   ],
     heart: [
     '.kkk.kkk.',

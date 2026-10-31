@@ -18,7 +18,7 @@ const LEVEL = {
   crates:  [[6, 3], [4, 5], [11, 4]],          // schiebbar
   orc:     [16, 10],
   orcPatrol: [[13, 10], [20, 10]],             // Wegpunkte des Orks
-    stairs:  [21, 10],                           // Treppe zur nächsten Ebene
+  stairs:  [21, 10],                           // Treppe zur nächsten Ebene
 };
 
 // ---------- Widerstand: Was ist ein Hindernis? ----------
@@ -100,6 +100,7 @@ function makeCrate(col, row) {
   o.kind = 'crate'; o.solid = true; o.pushable = true;
   o.hp = 1;                          // ein Hieb zerschlägt sie
   o.loot = true;                     // hinterlässt eine Münze
+  o.hitFx = SPLINTERS;               // Holzsplitter beim Treffer
   o.draw = (ctx, x, y) => drawPixel(ctx, PIX.crate, x, y);
   return o;
 }
@@ -162,8 +163,10 @@ function buildLevel(depth) {
     .add(new RollControl(3, 1.5))   
     .add(new GridControl()) 
     .add(new AttackControl())     // Angriff mit Leertaste
-    .add(new Health());
-  player.kind = 'hero'; 
+    .add(new Health())
+    .add(new BoltControl(2));        // F: Blitz, 2 s Abklingzeit // TODO Abklingzeit verkürzen mit Levelup
+  player.kind = 'hero';
+  player.hitFx = BLOOD;
   player.solid = true;
   player.maxHp = 5            // 5 Herzen
   player.hp = player.maxHp;   // startet mit voller Gesundheit
@@ -184,6 +187,7 @@ function buildLevel(depth) {
   attack: new MeleeAttack(1.2, 0.45, 1),       // 1.2 s pro Schlag, trifft nach 0.45 s, 1 Herz
   }));
   orc.solid = true;
+  orc.hitFx = BLOOD;
   orc.kind = 'orc';                     // damit das HUD weiss, dass es ein Ork ist
   orc.state = 'patrol';                 // Startzustand
   orc.maxHp = 3;                        // hält 3 Treffer aus

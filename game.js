@@ -191,9 +191,11 @@ const input = {
   up: false,
   down: false,
   step: null,
-  roll: false,       // Shift für Ausweichrolle
-  attack: false,     // Leertaste für Nahkampf
-  restart: false,    // R oder Enter: neuer Durchlauf nach dem Tod
+  roll: false,              // Shift für Ausweichrolle
+  attack: false,            // Leertaste für Nahkampf
+  restart: false,           // R oder Enter: neuer Durchlauf nach dem Tod
+  particlesEnabled: true,   // P: Partikel an und aus
+  cast: false,              // F: Fulgur-Blitz (Einmal-Impuls)   // neu
   overlayEnabled: true,
 };
 
@@ -217,6 +219,11 @@ window.addEventListener('keydown', (e) => {
 
   // Angriff
   if (e.code === 'Space' && !e.repeat) input.attack = true;
+  // Fernkampf
+  if (e.code === 'KeyF' && !e.repeat) input.cast = true;   // neu
+
+  // Partikel an und aus
+  if (e.code === 'KeyP' && !e.repeat) input.particlesEnabled = !input.particlesEnabled;
 
   // Neustart
   if ((e.code === 'KeyR' || e.code === 'Enter') && !e.repeat) input.restart = true;
@@ -305,6 +312,7 @@ function simulationStep() {
   input.step = null;
   input.roll = false;
   input.attack = false;
+  input.cast = false;   // neu
   input.restart = false;
 }
 
@@ -336,6 +344,7 @@ function frame(now) {
   }
 
   updateShake(frameTime);
+  updateParticles(frameTime);   // Teilchen mit der echten Framezeit
 
   const alpha = accumulator / STEP; // Anteil bis zum nächsten Schritt, für die Interpolation
   const off = shakeOffset();
@@ -353,6 +362,7 @@ function frame(now) {
     o.render(ctx, dx, dy, frameTime);
   }
 
+  drawParticles();   // noch im Shake, die Funken gehören zur Welt
   ctx.restore();
   drawHud();
 
@@ -474,6 +484,7 @@ class RollControl {
   }
   update(e, dt) {
     this.timer=Math.max(0, this.timer - dt);
+    e.rollReady = 1 - this.timer / this.cooldown;   // 0 bis 1, für die Anzeige   // neu
     if (!input.roll || this.timer > 0 || e.attacking) return;
 
     //Richtung: gedrückte Pfeiltaste sonst Blickrichtung

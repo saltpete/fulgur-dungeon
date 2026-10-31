@@ -23,6 +23,12 @@ function drawHud(dt) {
     drawPixel(ctx, PIX.coin, W - 92, 2);
     ctx.textAlign = 'left';
     ctx.fillText(String(game.coins), W - 58, 25);
+    
+    // Abklingzeiten: Der Balken füllt sich, hell heisst bereit
+    drawCooldown('SHIFT ROLLE', player.rollReady ?? 1, W - 166, 36);
+    
+    // TODO: Zusätzliche Fähigkeiten automatisch hinzufügen lassen
+    drawCooldown('F BLITZ', player.boltReady ?? 1, W - 86, 36);
 
     // Durchlauf vorbei (FA-3-3, FA-3-4)
     if (game.state === 'dead') {
@@ -37,4 +43,18 @@ function drawHud(dt) {
         ctx.fillText('Drücke R oder Enter für einen neuen Durchlauf', W / 2, H / 2 + 20);
         ctx.textAlign = 'left';
     }
+}
+
+// Ein Balken für eine Abklingzeit. ready: 0 gerade benutzt, 1 bereit
+function drawCooldown(label, ready, x, y) {
+  const w = 74, h = 14;
+  ctx.fillStyle = 'rgba(15, 17, 24, 0.6)';                 // Hintergrund
+  ctx.fillRect(x, y, w, h);
+  ctx.fillStyle = ready >= 1 ? PALETTE.u : PALETTE.U;      // bereit hell, sonst dunkel
+  ctx.fillRect(x, y, w * Math.min(1, ready), h);           // füllt sich von links
+  ctx.fillStyle = ready >= 1 ? PALETTE.k : PALETTE.w;      // Schrift auf beiden Farben lesbar
+  ctx.font = 'bold 10px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(label, x + w / 2, y + 11);
+  ctx.textAlign = 'left';
 }
