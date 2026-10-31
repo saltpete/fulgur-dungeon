@@ -17,8 +17,10 @@ const LEVEL = {
   hero:    [2, 2],
   crates:  [[6, 3], [4, 5], [11, 4]],          // schiebbar
   orc:     [16, 10],
-  orcPatrol: [[13, 10], [20, 10]],             // Wegpunkte des Orks
+  orcPatrol: [[13, 10], [20, 10]],             // Wegpunkte des Orks 
   stairs:  [21, 10],                           // Treppe zur nächsten Ebene
+  slime:   [19, 3],
+  slimePatrol: [[16, 3], [21, 3]],             // Wegpunkte des Schleims im Raum oben rechts
 };
 
 // ---------- Widerstand: Was ist ein Hindernis? ----------
@@ -130,6 +132,27 @@ function makeStairs(col, row) {
   return o;
 }
 
+// Schleim: zweiter Gegnertyp aus denselben Bausteinen wie der Ork, ohne neue Klasse
+// TODO: DAs gleiche Prinzip für Orc einbauen
+function makeSlime(col, row, points) {
+  const o = new Entity(col, row, SLIME_SPRITE)
+    .add(new EnemyBrain(fleeDecision(0, 6 * TILE), {          // entscheidet: patrol oder flee
+      patrol: new Patrol(points, 0.6),                        // Baustein für patrol
+      flee: new Flee(0.3),                                    // Baustein für flee
+    }))
+    .add(new GridMovement())
+    .add(new Health());
+  o.kind = 'slime';
+  o.state = 'patrol';
+  o.solid = true;
+  o.maxHp = 2;                                    // hält 2 Treffer aus
+  o.hp = o.maxHp;
+  o.loot = true;                                  // hinterlässt eine Münze
+  o.hitFx = GOO;                                  // hellblaue Tropfen beim Treffer
+  o.barY = -20;                                   // Lebensbalken tiefer, er ist kleiner als der Ork
+  return o;
+}
+
 // Entfernt tote Objekte. Rückwärts, weil splice alles dahinter nach vorne schiebt.
 function removeDead() {
   for (let i = objects.length - 1; i >= 0; i--) {
@@ -178,7 +201,7 @@ function buildLevel(depth) {
   const dr = depth > 1 ? Math.floor(Math.random() * 5) - 2 : 0;   // -2 bis +2
   const patrol = LEVEL.orcPatrol.map(([c, r]) => [c, r + dr]);
 
-  // Ork wie in Block 2, jetzt fest (solid). Noch kein kind = 'orc', sonst stürzt hud.js ab
+  // Ork
   const orc = new Entity(LEVEL.orc[0], LEVEL.orc[1], ENEMY_SPRITE)
   .add(new GridMovement())              // Schreibt x,y^
   .add(new Health())                   // Ork kann Schaden nehmen
@@ -204,6 +227,9 @@ function buildLevel(depth) {
   
   //Treppen hinzufügen
   objects.push(makeStairs(...LEVEL.stairs));
+
+  //Schleim spawnen
+  objects.push(makeSlime(...LEVEL.slime, LEVEL.slimePatrol));
 
   lastBumps = 0;   // neuer Held beginnt wieder bei 0 Rempeleien
   lastSwings = 0;

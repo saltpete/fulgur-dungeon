@@ -44,32 +44,49 @@ const ENEMY_WALK_FRAMES = 6;
 
 // Held
 const heroWalk = new Image();
-heroWalk.src   = 'assets/Swordsman_lvl1_Walk_with_shadow.png';  // craftpix.net (License: Free for personal and commercial use, with credit to craftpix.net)
+heroWalk.src   = 'assets/Swordsman_lvl1_Walk_with_shadow.png';    // craftpix.net (License: Free for personal and commercial use, with credit to craftpix.net)
 const heroIdle= new Image();
-heroIdle.src = 'assets/Swordsman_lvl1_Idle_with_shadow.png'; // craftpix.net (License: Free for personal and commercial use, with credit to craftpix.net)
+heroIdle.src = 'assets/Swordsman_lvl1_Idle_with_shadow.png';      // craftpix.net (License: Free for personal and commercial use, with credit to craftpix.net)
 const heroAttack = new Image();
-heroAttack.src = 'assets/Swordsman_lvl1_attack_with_shadow.png'// craftpix.net (License: Free for personal and commercial use, with credit to craftpix.net)
+heroAttack.src = 'assets/Swordsman_lvl1_attack_with_shadow.png'   // craftpix.net (License: Free for personal and commercial use, with credit to craftpix.net)
 
 // Gegner
 const enemyWalk = new Image();
-enemyWalk.src   = 'assets/orc1_walk_with_shadow.png';
+enemyWalk.src   = 'assets/orc1_walk_with_shadow.png';             // craftpix.net (License: Free for personal and commercial use, with credit to craftpix.net)
 const enemyIdle= new Image();
-enemyIdle.src = 'assets/orc1_idle_with_shadow.png';
+enemyIdle.src = 'assets/orc1_idle_with_shadow.png';               // craftpix.net (License: Free for personal and commercial use, with credit to craftpix.net)
 const enemyAttack = new Image();
-enemyAttack.src = 'assets/orc1_attack_with_shadow.png'
+enemyAttack.src = 'assets/orc1_attack_with_shadow.png'            // craftpix.net (License: Free for personal and commercial use, with credit to craftpix.net)
+
+// Schleim
+const slimeWalk = new Image();
+slimeWalk.src = 'assets/Slime2_walk_with_shadow.png';              // craftpix.net (License: Free for personal and commercial use, with credit to craftpix.net)
+const slimeIdle = new Image();
+slimeIdle.src = 'assets/Slime2_idle_with_shadow.png';              // craftpix.net (License: Free for personal and commercial use, with credit to craftpix.net)
 
 // Sprites
+//Held
 const HERO_SPRITE = {
   walk: heroWalk, idle: heroIdle, attack: heroAttack,
   walkFrames: HERO_WALK_FRAMES, idleFrames: HERO_IDLE_FRAMES, attackFrames:8,
   rows: { down: 0, left: 1, right: 2, up: 3 }
 };
 
+//Ork
 const ENEMY_SPRITE = {
   walk: enemyWalk, idle: enemyIdle, attack: enemyAttack,
   walkFrames: ENEMY_WALK_FRAMES, idleFrames: ENEMY_IDLE_FRAMES, attackFrames: 8,
   rows: { down: 0, up: 1, left: 2, right: 3 }   // Ork-Sheet ist anders sortiert
 };
+
+//Schleim
+const SLIME_SPRITE = {
+  walk: slimeWalk, idle: slimeIdle,
+  walkFrames: 8, idleFrames: [6, 6, 6, 6],
+  rows: { down: 0, up: 1, left: 2, right: 3 },   // gleiche Reihenfolge wie beim Ork
+  foot: 0.656                                    // Füsse in Zeile 42 von 64, höher als bei Held und Ork
+};
+
 
 // Maptiles
 const tiles = new Image();
@@ -433,7 +450,8 @@ class Entity {
     }
 
     const offX = (TILE - DRAW) / 2;
-    const offY = TILE - DRAW * FOOT;
+    const offY = TILE - DRAW * (this.sprite.foot ?? FOOT);   // Fusslinie, pro Sprite einstellbar
+
     ctx.drawImage(
       sheet,
       frame * SPRITE, row * SPRITE, SPRITE, SPRITE,

@@ -68,7 +68,7 @@ function drawHealthBars(alpha) {
     const seg = 8;                                      // Breite pro Leben in px
     const w = o.maxHp * seg;
     const bx = Math.round(x + (TILE - w) / 2);
-    const by = Math.round(y - 38);                      // über dem Kopf
+    const by = Math.round(y + (o.barY ?? -38));         // über dem Kopf, pro Figur einstellbar
     ctx.fillStyle = PALETTE.k;
     ctx.fillRect(bx - 1, by - 1, w + 1, 6);             // dunkler Rahmen
     for (let i = 0; i < o.maxHp; i++) {

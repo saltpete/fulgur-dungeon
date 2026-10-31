@@ -156,3 +156,41 @@ function faceToward(e, t) {
   if (Math.abs(dcol) > Math.abs(drow)) e.facing = dcol < 0 ? 'left' : 'right';
   else e.facing = drow < 0 ? 'up' : 'down';
 }
+
+// ---------- Fliehen: für jeden Gegner ----------
+// Entscheidung «ängstlich»: patrouilliert und flieht, wenn der Held zu nah kommt.
+// Gibt eine decide-Funktion zurück, die sich ihre zwei Grenzen merkt.
+// Jeder Gegner kann sie mit eigenen Werten nutzen, wie Patrol oder Chase.
+//   patrol (Patrouillieren) → flee    Held näher als scareRange oder getroffen
+//   flee   (Fliehen)        → patrol  Abstand über safeRange (Hysterese: safeRange grösser)
+// Kein Blickfeld nötig: Er spürt den Helden rundum.
+function fleeDecision(scareRange, safeRange) {
+  return (state, p) => {
+    if (state === 'patrol') return (p.dist <= scareRange || p.wasHit) ? 'flee' : 'patrol';
+    if (state === 'flee') return p.dist > safeRange ? 'patrol' : 'flee';
+    return state;
+  };
+}
+// Fliehen: ein Schritt weg vom Helden. Das Ziel ist der Held, gespiegelt am Fliehenden.
+class Flee {
+  constructor(interval) {
+    this.interval = interval;   // Sekunden pro Schritt
+    this.timer = 0;
+  }
+  act(e, p, dt) {
+    this.timer -= dt;
+    if (this.timer > 0) return;
+    this.timer = this.interval;
+    let best = null;
+    let bestDist = Math.hypot(e.col - player.col, e.row - player.row);   // nur Schritte, die weiter weg führen
+    for (const [dir, [dc, dr]] of Object.entries(DIRV)) {
+      if (isBlocked(e.col + dc, e.row + dr, e)) continue;                 // Wand oder Figur: geht nicht
+      const dist = Math.hypot(e.col + dc - player.col, e.row + dr - player.row);
+      if (dist > bestDist) { best = dir; bestDist = dist; }
+    }
+    if (!best) return;                                                   // in der Ecke: stehen bleiben
+    e.facing = best;
+    const [dc, dr] = DIRV[best];
+    tryMove(e, dc, dr);
+  }
+}
