@@ -99,7 +99,9 @@ function checkTriggers() {
 // Kiste: Hindernis, das der Held schieben kann. GridMovement lässt sie gleiten.
 function makeCrate(col, row) {
   const o = new Entity(col, row).add(new GridMovement());
-  o.kind = 'crate'; o.solid = true; o.pushable = true;
+  o.kind = 'crate';
+  o.solid = true;                    // solides Objekt
+  o.pushable = true;                 // kann verschoben werden
   o.hp = 1;                          // ein Hieb zerschlägt sie
   o.loot = true;                     // hinterlässt eine Münze
   o.hitFx = SPLINTERS;               // Holzsplitter beim Treffer
@@ -136,7 +138,7 @@ function makeStairs(col, row) {
 // TODO: DAs gleiche Prinzip für Orc einbauen
 function makeSlime(col, row, points) {
   const o = new Entity(col, row, SLIME_SPRITE)
-    .add(new EnemyBrain(fleeDecision(0, 6 * TILE), {          // entscheidet: patrol oder flee
+    .add(new EnemyBrain(fleeDecision(4 * TILE, 6 * TILE), {          // entscheidet: patrol oder flee
       patrol: new Patrol(points, 0.6),                        // Baustein für patrol
       flee: new Flee(0.3),                                    // Baustein für flee
     }))
