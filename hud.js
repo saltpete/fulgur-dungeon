@@ -9,6 +9,13 @@ function drawHud() {
         const art = i < player.hp ? PIX.heart : PIX.heartEmpty;
         drawPixel(ctx, art, 10 + i * 24, 10);
     }
+    // Rechts oben: Münzen
+    drawPixel(ctx, PIX.coin, W - 92, 2);
+    ctx.textAlign = 'left';
+    ctx.font = 'bold 16px sans-serif';
+    ctx.fillStyle = '#f4efe6';
+    ctx.fillText(String(game.coins), W - 58, 25);
+
     // Durchlauf vorbei (FA-3-3, FA-3-4)
     if (game.state === 'dead') {
         ctx.fillStyle = 'rgba(8, 6, 10, 0.72)';

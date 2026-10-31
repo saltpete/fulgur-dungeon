@@ -9,7 +9,7 @@ const objects = [];
 let player = null;   // Held wird bei jedem Level neu erzeugt
 
 // Spielzustand: 'play' oder 'dead'. Ohne diese Zeile wäre game dein Canvas (id="game").
-const game = { state: 'play' };
+const game = { state: 'play', coins: 0 };   // Münzen überleben den Tod 
 
 // Aufbau der Ebene: Spalte und Reihe jedes Objekts. Die Karte selbst
 // steht in game.js. Prozedurale Ebenen folgen erst in Block 4.
@@ -69,6 +69,26 @@ function push(o, dcol, drow) {
   return true;
 }
 
+// ---------- Interaktion: Auslöser über Kollision ----------
+// Rechteck-Kollision aus der Vorlesung (AABB): Überlappen sich a und b?
+function overlaps(a, b) {
+  return a.x < b.x + b.w && b.x < a.x + a.w
+      && a.y < b.y + b.h && b.y < a.y + a.h;
+}
+
+// Hitbox: kleiner als die Kachel, damit ein Auslöser erst greift,
+// wenn der Held sichtbar darauf steht. Nutzt x und y, also die gleitende Position.
+function hitbox(e, inset = 8) {
+  return { x: e.x + inset, y: e.y + inset, w: TILE - 2 * inset, h: TILE - 2 * inset };
+}
+
+// Berührt der Held ein Objekt mit onTouch, reagiert das Objekt selbst
+function checkTriggers() {
+  const hb = hitbox(player);
+  for (const o of objects) {
+    if (o.onTouch && !o.dead && overlaps(hb, hitbox(o))) o.onTouch(player);
+  }
+}
 
 // ---------- Objekte der Welt ----------
 // Alles Entities, kein Objekt bekommt eine eigene Klasse.
@@ -78,9 +98,25 @@ function push(o, dcol, drow) {
 function makeCrate(col, row) {
   const o = new Entity(col, row).add(new GridMovement());
   o.kind = 'crate'; o.solid = true; o.pushable = true;
+  o.hp = 1;                          // ein Hieb zerschlägt sie
+  o.loot = true;                     // hinterlässt eine Münze
   o.draw = (ctx, x, y) => drawPixel(ctx, PIX.crate, x, y);
   return o;
 }
+
+// Münze: Item ohne Widerstand. Beim Berühren zählt sie und verschwindet.
+function makeCoin(col, row) {
+  const o = new Entity(col, row);
+  o.kind = 'coin';
+  o.layer = 0;                       // am Boden, unter den Figuren
+  o.onTouch = () => {
+    game.coins += 1;
+    o.dead = true;                   // removeDead räumt sie nach dem Schritt weg
+  };
+  o.draw = (ctx, x, y) => drawPixel(ctx, PIX.coin, x, y);
+  return o;
+}
+
 
 // Wenn die Figur auf dem Ausgang steht, kann sie in den nächsten Bereich wechseln.
 function foundExit(e){
@@ -92,7 +128,10 @@ function foundExit(e){
 // Entfernt tote Objekte. Rückwärts, weil splice alles dahinter nach vorne schiebt.
 function removeDead() {
   for (let i = objects.length - 1; i >= 0; i--) {
-    if (objects[i].dead) objects.splice(i, 1);
+    const o = objects[i];
+    if (!o.dead) continue;
+    objects.splice(i, 1);
+    if (o.loot) objects.push(makeCoin(o.col, o.row));   // Beute fallen lassen
   }
 }
 
@@ -131,6 +170,7 @@ function buildLevel(depth) {
   orc.state = 'patrol';                 // Startzustand
   orc.maxHp = 3;                        // hält 3 Treffer aus
   orc.hp = orc.maxHp;
+  orc.loot = true;                      // hinterlässt eine Münze
   objects.push(orc);
 
   for (const [c, r] of LEVEL.crates)  objects.push(makeCrate(c, r));

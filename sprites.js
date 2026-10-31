@@ -23,7 +23,9 @@ const PALETTE = {
   e: '#3a3346',    // leeres Herz
   p: '#e04555',   // Herz rot
   w: '#fff6d5',   // Glanz
-  e: '#3a3346'    // leeres Herz
+  e: '#3a3346',    // leeres Herz
+  y: '#f2c14e',   // Gold
+  Y: '#b8862b'    // Gold dunkel
 };
 
 const PIX = {
@@ -64,7 +66,25 @@ const PIX = {
     '..keeek..',
     '...kek...',
     '....k....'
-  ]
+  ],
+    coin: [
+    '................',
+    '................',
+    '................',
+    '......kkkk......',
+    '.....kyyyyk.....',
+    '....kywwyyYk....',
+    '....kywyyyYk....',
+    '....kyyyyyYk....',
+    '....kyyyyyYk....',
+    '....kyyyyYYk....',
+    '.....kYYYYk.....',
+    '......kkkk......',
+    '................',
+    '................',
+    '................',
+    '................'
+  ],
 };
 
 // Raster einmal in ein kleines Canvas malen und merken (Cache)

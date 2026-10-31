@@ -18,8 +18,8 @@ function damage(t, amount, dcol = 0, drow = 0) {
   t.hp = Math.max(0, t.hp - amount);
   t.wasHit = true;                                // der Gegner merkt das beim Wahrnehmen
   t.invuln = t.invulnTime || 0;                   // Schutzzeit, falls die Figur eine hat
-  knockback(t, dcol, drow);
-  if (t.hp <= 0) die(t);
+  if (t.hp <= 0) die(t);                          // tot: kein Rückstoss mehr, die Beute fällt an Ort und Stelle
+  else knockback(t, dcol, drow);
   return true;
 }
 

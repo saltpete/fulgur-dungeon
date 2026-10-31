@@ -296,7 +296,7 @@ function simulationStep() {
     for (const o of objects) {
       o.simulate(STEP);
     }
-
+    checkTriggers();   // Münzen und Zonen: berührt der Held etwas?
     removeDead();
   }
   // Einmal-Impulse sind verbraucht, auch wenn der Held tot ist
@@ -338,7 +338,7 @@ function frame(now) {
   drawMap();
 
   // Entities zeichnen:
-  const order = objects.slice().sort((a, b) => a.y - b.y);
+  const order = objects.slice().sort((a, b) => (a.layer ?? 1) - (b.layer ?? 1) || a.y - b.y);
   for (const o of order) {
     const dx = o.prevX + (o.x - o.prevX) * alpha;
     const dy = o.prevY + (o.y - o.prevY) * alpha;
