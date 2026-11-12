@@ -15,7 +15,7 @@ function mulberry32(seed) {
     t = Math.imul(t ^ (t >>> 15), t | 1);
     t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296; // 32-bit
-    //   };
+    };
 }
 // Rauschen mit Schwelle: Jede Kachel wird mit Wahrscheinlichkeit wallChance Wand.
 // Die Höhlen entstehen erst danach beim Glätten.
