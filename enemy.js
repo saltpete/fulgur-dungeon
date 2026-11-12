@@ -75,11 +75,12 @@ function stepToward(e, col, row) {
   }
 }
 
-// Patrouillieren: läuft seine Wegpunkte der Reihe nach ab
+// Die vier Richtungen aus DIRV, für die zufällige Wahl
+const DIRS = ['up', 'down', 'left', 'right'];
+
+// Patrouillieren: läuft zufällig herum wie graben() aus PVA 4.3
 class Patrol {
-  constructor(points, interval) {
-    this.points = points;       // Wegpunkte [Spalte, Reihe]
-    this.index = 0;             // aktueller Wegpunkt
+  constructor(interval) {
     this.interval = interval;   // Sekunden pro Schritt
     this.timer = 0;
   }
@@ -87,9 +88,10 @@ class Patrol {
     this.timer -= dt;
     if (this.timer > 0) return;
     this.timer = this.interval;
-    const [col, row] = this.points[this.index];
-    if (e.col === col && e.row === row) this.index = (this.index + 1) % this.points.length;   // angekommen: nächster
-    else stepToward(e, col, row);
+    const dir = DIRS[Math.floor(Math.random() * DIRS.length)];   // zufällige Richtung wie in graben()
+    e.facing = dir;
+    const [dc, dr] = DIRV[dir];
+    tryMove(e, dc, dr);         // Wand oder Figur im Weg: Schritt fällt aus
   }
 }
 

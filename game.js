@@ -3,17 +3,22 @@
 // ============================================================
 // In dieser Datei ist die Spiellogik implementiert. Sie ist in mehrere Teile gegliedert:
 // 1. Assets: Bilder, Tileset, Map, Figuren
-// 2. Input: Tastatur, Touchscreen-DPad, Overlay
+// 2. Input: Tastatur, Overlay
 // 3. Game Loop: Simulation, Interpolation, Rendering
 // 4. Komposition: Figuren, Komponenten, Steuerung
 
 // ============================================================
 // Die weiteren Dateien mit der Spiellogik sind:
 // world.js    Hindernisse, Kollision, Interaktion, Ebenenaufbau
+// mapgen.js   Generierung der Ebenen, Seed, Bossebene
+// combat.js   Leben, Schaden, Schwerthieb, Fulgur-Blitz
+// enemy.js    Gegner: wahrnehmen, entscheiden, handeln
+// hud.js      Herzen, Münzen, Abklingzeiten, Banner
+// effects.js  Partikel
 // sprites.js  Pixelgrafiken
 
 // Grundregel: Jede Zeile, die Ihr KI-Assistent schreibt, muessen
-// Sie erklaeren koennen. In Uebung 1 arbeiten Sie ohne Assistent.
+// Sie erklaeren koennen.
 // ============================================================
 
 const canvas = document.getElementById('game');
@@ -92,24 +97,29 @@ const SLIME_SPRITE = {
 const tiles = new Image();
 tiles.src = 'assets/walls_floor.png'; // craftpix.net (License: Free for personal and commercial use, with credit to craftpix.net)
 
-const map = [   // 15 Reihen, 25 Spalten. 0 Boden, 1 Wand, 2 Treppe
-  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-  [1,1,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,1,1],
-  [1,1,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,1,1],
-  [1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
-  [1,1,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,1,1],
-  [1,1,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1],
-  [1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1],
-  [1,1,1,1,1,0,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,1,1],
-  [1,1,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,1,1],
-  [1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,1,1],
-  [1,1,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,1,1],
-  [1,1,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,1,1],
-  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+const LEVEL1_MAP = [   // 18 Reihen, 32 Spalten. 0 Boden, 1 Wand, 2 Treppe
+  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+  [1,1,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,1,1],
+  [1,1,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,1,1],
+  [1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
+  [1,1,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,1,1],
+  [1,1,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1,1,1,1],
+  [1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1,1,1,1],
+  [1,1,1,1,1,0,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
+  [1,1,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
+  [1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,1,1],
+  [1,1,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
+  [1,1,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
+  [1,1,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
+  [1,1,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
+  [1,1,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
+  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
 ];
 
+// Aktuelle Ebene: am Anfang eine Kopie der Handkarte, ab Ebene 2 schreibt die Generierung hier hinein
+const map = LEVEL1_MAP.map(row => row.slice());
 
 const TILESET = {
   0: [1, 6],      // Boden, Grundkachel
@@ -120,8 +130,8 @@ const TILESET = {
 const FLOOR_VARIANTS = [[1,6], [1,6], [1,6], [11,21], [12,21], [11,22], [12,22]];
 
 // Konstanten für die Anzahl der Zeilen und Spalten in der Karte
-const ROWS = map.length;
-const COLS = map[0].length;
+const ROWS = H / TILE;
+const COLS = W / TILE;
 
 // Prüfung ob eine Zelle eine Wand ist. Außerhalb des Spielfeldes gilt als Wand.
 function isWall(x, y){
@@ -155,7 +165,7 @@ function floorTile(x, y){
 function drawMap(){
   for(let y = 0; y < ROWS; y++){
     for(let x = 0; x < COLS; x++){
-      const v = map[y][x];
+      const v = map[y][x];  // 0 Boden, 1 Wand, 2 Treppe
       const t = v === 1 ? wallTile(x, y)
               : v === 0 ? floorTile(x, y)
               : TILESET[v];
@@ -230,7 +240,7 @@ window.addEventListener('keydown', (e) => {
   if (e.code === 'Space') e.preventDefault();
 
   //Overlay
-  if (e.code === 'KeyO' && !e.repeat) input.overlayEnabled = !input.overlayEnabled;;
+  if (e.code === 'KeyO' && !e.repeat) input.overlayEnabled = !input.overlayEnabled;
   // Rolle
   if ((e.code === 'ShiftLeft' || e.code === 'ShiftRight') && !e.repeat) input.roll = true;
 
@@ -272,7 +282,6 @@ let lastTime = performance.now();
 let fps = 0;
 let lastDt = 0;
 const FPS_SMOOTHING = 0.1; // Glättungsfaktor für FPS-Berechnung
-let position = {row: 0, col: 0}; // Position des Spielers
 
 // ester Zeitschritt STEP = 1/60 mit Akkumulator (Eimer).
 const STEP = 1/60; // 60 FPS
@@ -280,12 +289,10 @@ let accumulator = 0; // Eimer
 
 // ---- Overlay--------------------
 function drawOverlay(alpha) {
-  position.row = player.row;
-  position.col = player.col;
   const left = [
     `FPS: ${fps.toFixed(0)}   DT: ${lastDt.toFixed(4)}`,
     `Alpha: ${alpha.toFixed(3)}`,
-    `Player Position: Row ${position.row}, Col ${position.col}`,
+    `Player Position: Row ${player.row}, Col ${player.col}`,
   ]
   ctx.fillStyle = 'rgba(12, 14, 20, 0.7)';
   ctx.fillRect(0, H - 62, W, 62);
@@ -297,7 +304,7 @@ function drawOverlay(alpha) {
   const orc = objects.find(o => o.kind === 'orc');
   if (orc) {
     ctx.textAlign = 'right';
-    ctx.fillText(`Ork: ${STATE_NAMES[orc.state]} · Leben ${orc.hp}/${orc.maxHp}`, W - 12, H - 46);;
+    ctx.fillText(`Ork: ${STATE_NAMES[orc.state]} · Leben ${orc.hp}/${orc.maxHp}`, W - 12, H - 46);
     const p = perceive(orc);
     ctx.fillText(`Abstand ${Math.round(p.dist)} px · daneben: ${p.adjacent ? 'ja' : 'nein'} · sieht: ${p.sees ? 'ja' : 'nein'}`, W - 12, H - 32);
     ctx.textAlign = 'left';
@@ -356,12 +363,13 @@ function frame(now) {
   }
 
   if (game.depth !== lastDepth) {   // neue Ebene: Banner zeigen
-  showBanner('Ebene ' + game.depth);
-  lastDepth = game.depth;
+    showBanner('Ebene ' + game.depth);
+    lastDepth = game.depth;
   }
 
   updateShake(frameTime);
   updateParticles(frameTime);   // Teilchen mit der echten Framezeit
+  updateBanner(frameTime);      // Banner zählt seine Anzeigezeit herunter
 
   const alpha = accumulator / STEP; // Anteil bis zum nächsten Schritt, für die Interpolation
   const off = shakeOffset();
@@ -370,6 +378,7 @@ function frame(now) {
   ctx.save();
   ctx.translate(Math.round(off.x), Math.round(off.y)); // Shake-Offset anwenden
   drawMap();
+  drawMood();   // Bossebene: rote Farbschicht
 
   // Entities zeichnen:
   const order = objects.slice().sort((a, b) => (a.layer ?? 1) - (b.layer ?? 1) || a.y - b.y);
@@ -492,7 +501,7 @@ class GridControl {
 
     // Schritt geklappt, Figur unterwegs
     if(dir && moved) e.moving = true;
-    // Gegen ein Hindernis gelaufen (Hebel zählt nicht, der reagiert selbst)
+    // Gegen ein Hindernis gelaufen
     if (!moved && pressed) e.bumps = (e.bumps || 0) + 1;
   }
 }

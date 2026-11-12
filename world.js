@@ -11,16 +11,15 @@ let player = null;   // Held wird bei jedem Level neu erzeugt
 // Spielzustand: 'play' oder 'dead'. Ohne diese Zeile wäre game dein Canvas (id="game").
 const game = { state: 'play', coins: 0, depth: 1 };   // Münzen überleben den Tod
 
-// Aufbau der Ebene: Spalte und Reihe jedes Objekts. Die Karte selbst
-// steht in game.js. Prozedurale Ebenen folgen erst in Block 4.
+// Aufbau der Ebene: Spalte und Reihe jedes Objekts
 const LEVEL = {
   hero:    [2, 2],
   crates:  [[6, 3], [4, 5], [11, 4]],          // schiebbar
-  orc:     [16, 10],
-  orcPatrol: [[13, 10], [20, 10]],             // Wegpunkte des Orks 
   stairs:  [21, 10],                           // Treppe zur nächsten Ebene
-  slime:   [19, 3],
-  slimePatrol: [[16, 3], [21, 3]],             // Wegpunkte des Schleims im Raum oben rechts
+  enemies: [                                   // gleich aufgebaut wie bei generateLevel
+    { kind: 'orc',   col: 16, row: 10 },
+    { kind: 'slime', col: 19, row: 3 },
+  ],
 };
 
 // ---------- Widerstand: Was ist ein Hindernis? ----------
@@ -43,7 +42,7 @@ function isBlocked(col, row, mover) {
 
 // Grundlegende Bewegung auf dem Raster (Block 2), erweitert um Hindernisse.
 // interact = true nur beim normalen Schritt des Helden: Dann darf er
-// Kisten schieben und den Hebel betätigen. Rolle, Rückstoss und Ork nicht.
+// Kisten schieben. Rolle, Rückstoss und Ork nicht.
 function tryMove(e, dcol, drow, interact = false) {
   const nc = e.col + dcol, nr = e.row + drow;   // Kandidat
   // 1. Wand oder ausserhalb des Spielfelds? Dann anhalten.
@@ -134,13 +133,32 @@ function makeStairs(col, row) {
   return o;
 }
 
+// Ork: Gegner mit Verfolgen und Angreifen, gebaut wie der Schleim
+function makeOrc(col, row) {
+  const o = new Entity(col, row, ENEMY_SPRITE)
+    .add(new GridMovement())                     // Schreibt x,y
+    .add(new Health())                           // Ork kann Schaden nehmen
+    .add(new EnemyBrain(decide, {
+      patrol: new Patrol(0.45),                  // zufällig herumlaufen, 1 Schritt alle 0.45 Sekunden
+      chase: new Chase(0.3),                     // auf der Jagd schneller, 1 Schritt alle 0.3 Sekunden
+      attack: new MeleeAttack(1.2, 0.45, 1),     // 1.2 s pro Schlag, trifft nach 0.45 s, 1 Herz
+    }));
+  o.kind = 'orc';                                // damit das HUD weiss, dass es ein Ork ist
+  o.state = 'patrol';                            // Startzustand
+  o.solid = true;
+  o.hitFx = BLOOD;
+  o.maxHp = 3;                                   // hält 3 Treffer aus
+  o.hp = o.maxHp;
+  o.loot = true;                                 // hinterlässt eine Münze
+  return o;
+}
+
 // Schleim: zweiter Gegnertyp aus denselben Bausteinen wie der Ork, ohne neue Klasse
-// TODO: DAs gleiche Prinzip für Orc einbauen
-function makeSlime(col, row, points) {
+function makeSlime(col, row) {
   const o = new Entity(col, row, SLIME_SPRITE)
-    .add(new EnemyBrain(fleeDecision(4 * TILE, 6 * TILE), {          // entscheidet: patrol oder flee
-      patrol: new Patrol(points, 0.6),                        // Baustein für patrol
-      flee: new Flee(0.3),                                    // Baustein für flee
+    .add(new EnemyBrain(fleeDecision(4 * TILE, 6 * TILE), {           // entscheidet: patrol oder flee
+      patrol: new Patrol(0.6),                                        // Baustein für patrol
+      flee: new Flee(0.3),                                            // Baustein für flee
     }))
     .add(new GridMovement())
     .add(new Health());
@@ -165,27 +183,22 @@ function removeDead() {
   }
 }
 
-// Verschiebt eine Position zufällig um höchstens ein Feld, wenn dort freier Boden ist.
-// So sieht jede Ebene etwas anders aus, die Karte selbst bleibt gleich (generiert wird erst in Block 4).
-function randomizePosition([col, row]) {
-  const c = col + Math.floor(Math.random() * 3) - 1;   // -1, 0 oder +1
-  const r = row + Math.floor(Math.random() * 3) - 1;
-  if (isBlocked(c, r, null) || map[r][c] === 2) return [col, row];   // Wand, Objekt oder Treppe: bleibt
-  return [c, r];
-}
-
 
 // ---------- Ebene aufbauen ----------
 function buildLevel(depth) {
   const hpBefore = depth > 1 ? player.hp : null  // HP speichern wenn Level grösser als 1
   objects.length = 0;
 
+  if (depth === 1) game.seed = newRunSeed();                       // neuer Durchlauf, neuer Seed
+  const L = depth === 1 ? useLevel1()
+        : generateLevel(game.seed + depth * 7919, depth);
+
   game.state = 'play';
   game.depth = depth;
   game.nextLevel = false;
 
   // Held (Bewegung, Rolle, Steuerung)
-  player = new Entity(LEVEL.hero[0], LEVEL.hero[1], HERO_SPRITE)
+  player = new Entity(L.hero[0], L.hero[1], HERO_SPRITE)
     .add(new GridMovement())        // Schreibt x,y
     .add(new RollControl(3, 1.5))   
     .add(new GridControl()) 
@@ -196,44 +209,22 @@ function buildLevel(depth) {
   player.hitFx = BLOOD;
   player.solid = true;
   player.maxHp = 5            // 5 Herzen
-  player.hp =   player.hp = hpBefore ?? player.maxHp;   // nimmt seine Leben mit, nur Ebene 1 startet voll
+  player.hp = hpBefore ?? player.maxHp;   // nimmt seine Leben mit, nur Ebene 1 startet voll
   player.invulnTime = 1;            // nach einem Treffer 1 s geschützt
   objects.push(player);
   
-    // Randomisierung der Wegpunkte
-  const dr = depth > 1 ? Math.floor(Math.random() * 5) - 2 : 0;   // -2 bis +2
-  const patrol = LEVEL.orcPatrol.map(([c, r]) => [c, r + dr]);
-
-  // Ork
-  const orc = new Entity(LEVEL.orc[0], LEVEL.orc[1], ENEMY_SPRITE)
-  .add(new GridMovement())              // Schreibt x,y^
-  .add(new Health())                   // Ork kann Schaden nehmen
-  .add(new EnemyBrain(decide, {
-    patrol: new Patrol(patrol, 0.45),          //  Wegpunkte und Geschwindigkeit(1 Schritt alle 0.45 Sekungen)
-  chase: new Chase(0.3),                       // auf der Jagd schneller (Alle 0.3 Sekunden einen Schritt)
-  attack: new MeleeAttack(1.2, 0.45, 1),       // 1.2 s pro Schlag, trifft nach 0.45 s, 1 Herz
-  }));
-  orc.solid = true;
-  orc.hitFx = BLOOD;
-  orc.kind = 'orc';                     // damit das HUD weiss, dass es ein Ork ist
-  orc.state = 'patrol';                 // Startzustand
-  orc.maxHp = 3;                        // hält 3 Treffer aus
-  orc.hp = orc.maxHp;
-  orc.loot = true;                      // hinterlässt eine Münze
-  objects.push(orc);
-
-  // Kisten position varieren (maximal 1 Feld)
-  for (const pos of LEVEL.crates) {
-    const [c, r] = depth > 1 ? randomizePosition(pos) : pos;
-    objects.push(makeCrate(c, r));
+  // Gegner: so viele, wie in L.enemies stehen (Ebene 1 fest, ab Ebene 2 aus dem Budget)
+  for (const e of L.enemies) {
+    if (e.kind === 'orc')   objects.push(makeOrc(e.col, e.row));
+    if (e.kind === 'slime') objects.push(makeSlime(e.col, e.row));
   }
+
+  for (const [c, r] of L.crates) objects.push(makeCrate(c, r));
   
   //Treppen hinzufügen
-  objects.push(makeStairs(...LEVEL.stairs));
-
-  //Schleim spawnen
-  objects.push(makeSlime(...LEVEL.slime, LEVEL.slimePatrol));
+  objects.push(makeStairs(...L.stairs));
 
   lastBumps = 0;   // neuer Held beginnt wieder bei 0 Rempeleien
-  lastSwings = 0;
+  lastHurts = 0;   // und bei 0 Treffern, sonst bleibt der Shake aus
+  lastDepth = 0;   // damit das Banner auch nach einem Neustart auf Ebene 1 erscheint
 }

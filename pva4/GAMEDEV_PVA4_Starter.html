@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GAMEDEV · PVA 4 · Starter</title>
+<style>
+  :root{--ink:#1f2430;--muted:#5b6472;--paper:#fafaf8;--line:#e4e2dc;--red:#c8102e;--teal:#0e7490;--violet:#5b4a9e;--ok:#166534}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--paper);color:var(--ink);padding:18px 24px}
+  code,pre,.mono{font-family:ui-monospace,"JetBrains Mono",Consolas,monospace;font-variant-ligatures:none;font-feature-settings:"liga" 0,"calt" 0}
+  h1{font-size:20px;margin-bottom:10px}
+  nav{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+  nav button{font:inherit;font-size:14px;font-weight:600;background:#fff;border:1px solid var(--line);border-radius:8px;padding:6px 12px;cursor:pointer;color:var(--ink)}
+  nav button.on{background:var(--violet);border-color:var(--violet);color:#fff}
+  .wrap{display:grid;grid-template-columns:640px minmax(280px,1fr);gap:20px;align-items:start}
+  canvas{width:640px;height:400px;border:1px solid var(--line);border-radius:10px;background:#fff;display:block}
+  #info{font-size:14px;line-height:1.55;margin-top:8px;color:var(--muted)}
+  #ctl{display:flex;flex-wrap:wrap;gap:10px 18px;margin-top:8px;font-size:14px}
+  #ctl label{display:flex;align-items:center;gap:6px}
+  #sceneTitle{margin-top:0}
+  .side .eyebrow{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--violet);margin-bottom:2px}
+  .side h2{font-size:19px;margin-bottom:6px}
+  .side .goal{font-size:14.5px;line-height:1.55;margin-bottom:12px}
+  ol.steps{list-style:none;counter-reset:st;margin:0 0 6px}
+  ol.steps li{counter-increment:st;position:relative;padding:0 0 10px 34px;font-size:14px;line-height:1.55}
+  ol.steps li::before{content:counter(st);position:absolute;left:0;top:0;width:24px;height:24px;border-radius:50%;background:#ede9fe;color:var(--violet);font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center}
+  ol.steps li b{display:block;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--violet)}
+  ol.steps code{background:#f0efeb;border-radius:4px;padding:0 4px;font-size:13px}
+  .pn{display:flex;justify-content:space-between;margin-top:14px}
+  .pn button{font:inherit;font-size:14px;font-weight:600;background:#fff;border:1px solid var(--line);border-radius:8px;padding:6px 12px;cursor:pointer;color:var(--ink)}
+  .pn button:disabled{opacity:.35;cursor:default}
+  #info b{color:var(--ink)}
+  #check{font:inherit;font-size:15px;font-weight:700;background:var(--ok);color:#fff;border:none;border-radius:8px;padding:8px 16px;cursor:pointer;margin:6px 0 10px}
+  #results div,#results details{font-size:13.5px;line-height:1.5;padding:6px 8px;border-radius:6px;margin-bottom:6px;background:#fff;border:1px solid var(--line)}
+  #results .ok{border-left:5px solid var(--ok)} #results .no{border-left:5px solid var(--red)}
+  #results .why{color:var(--muted)}
+  #err{display:none;background:#fdf1f2;border:1px solid var(--red);color:var(--red);padding:10px 12px;border-radius:8px;margin-bottom:10px;font-size:14px}
+  #results summary{cursor:pointer;font-weight:600}
+  #results details .why{display:block;margin-top:3px}
+  #summe{font-size:13px;color:var(--muted);margin:-6px 0 10px}
+  #ctl input[type=number]{font:inherit;font-size:14px;padding:2px 6px;border:1px solid var(--line);border-radius:6px}
+  #ctl button{font:inherit;font-size:14px;font-weight:600;background:#fff;border:1px solid var(--line);border-radius:8px;padding:4px 10px;cursor:pointer;color:var(--ink)}
+</style>
+</head>
+<body>
+<h1>GAMEDEV · PVA 4 · Starter</h1>
+<p style="font-size:14px;color:#5b6472;margin:-4px 0 12px">Öffnen Sie diese Datei zusätzlich im Editor. Sie ändern nur den Block <b>IHR CODE</b> ganz oben, speichern und laden die Seite neu. Jede Aufgabe hat eine eigene Szene; unten rechts im Bild steht, wie viele Prüfungen Ihr Code in dieser Aufgabe schon besteht.</p>
+<div id="summe"></div>
+<div id="err"></div>
+<nav id="nav"></nav>
+<div class="wrap">
+  <div>
+    <canvas id="cv" width="640" height="400"></canvas>
+    <div id="ctl"></div>
+    <div id="info"></div>
+  </div>
+  <div class="side">
+    <div class="eyebrow" id="eyebrow"></div>
+    <h2 id="sceneTitle"></h2>
+    <p class="goal" id="sceneGoal"></p>
+    <ol class="steps" id="steps"></ol>
+    <button id="check" type="button">Prüfen</button>
+    <div id="results"></div>
+    <div class="pn"><button id="prev" type="button">← zurück</button><button id="next" type="button">weiter →</button></div>
+  </div>
+</div>
+<script>
+// ═══════════════════════════════════════════════════════════════════════
+//  IHR CODE
+//  Sie ändern nur diesen Block. Nach jeder Änderung: speichern, Browser neu
+//  laden (F5), dann in der gewählten Aufgabe auf «Prüfen» klicken.
+//  Vorgegeben sind unter anderem mulberry32(seed), zufallsZahl(r, a, b),
+//  GEGNER, waendeRingsum(karte, x, y), hoehle(seed), erreichbar(...),
+//  weglaenge(...) und MIN_WEG. Sie stehen weiter unten im Fundament.
+// ═══════════════════════════════════════════════════════════════════════
+
+// ── Aufgabe 4.1 · Gleicher Seed, gleiche Welt ───────────────────────────
+// Baut eine Strecke aus 24 Spalten. Jede Zahl ist die Höhe des Bodens.
+function baueStrecke(seed) {
+  const r = mulberry32(seed);          // TODO: Zufall mit Seed statt Math.random
+  const hoehen = [3];
+  for (let c = 1; c < 24; c++) {
+    const schritt = zufallsZahl(r, -1, 1);                   // -1, 0 oder +1
+    hoehen.push(Math.max(1, Math.min(7, hoehen[c - 1] + schritt)));
+  }
+  return hoehen;
+}
+
+// ── Aufgabe 4.2 · Gegnerwelle mit Budget ────────────────────────────────
+// nummer: 1, 2, 3, ...   r: Zufallsgenerator, r() liefert eine Zahl von 0 bis unter 1.
+// Liefert eine Liste von Gegnernamen, z. B. ['Schleim', 'Ritter', 'Schleim'].
+
+ // const GEGNER = [{name: 'Schleim', kosten: 2}, {name: 'Fledermaus', kosten: 3}, {name: 'Ritter', kosten: 5}];
+
+function welle(nummer, r) {
+  // TODO 1: budget = 10 + 5 * nummer
+  let budget = 10 + 5 * nummer;
+  // TODO 2: Solange ein Gegner aus GEGNER ins Restbudget passt:
+  const liste = [];
+  while (true) {
+    const passende = GEGNER.filter(g => g.kosten <= budget);
+    if (passende.length === 0) break;
+    const gegner = passende[Math.floor(r() * passende.length)];
+    liste.push(gegner.name);
+    budget -= gegner.kosten;
+  }
+  //         einen der passenden zufällig wählen, seinen Namen anhängen,
+  //         seine Kosten vom Budget abziehen.
+  return liste;
+}
+
+// ── Aufgabe 4.3 · Random Walk ───────────────────────────────────────────
+// karte[y][x] ist 1 (Wand) oder 0 (Boden). Zu Beginn ist alles Wand.
+function graben(karte, schritte, r) {
+  let x = Math.floor(karte[0].length / 2), y = Math.floor(karte.length / 2);
+  karte[y][x] = 0;
+  for (let i = 0; i < schritte; i++) {
+    // TODO 1: eine von vier Richtungen zufällig wählen (oben, rechts, unten, links)
+    // 0,0 ist oben links, x nach rechts, y nach unten
+    
+    const richtungen = [[0, -1], [1, 0], [0, 1], [-1, 0]]; // oben, rechts, unten, links
+
+    const richtung = Math.floor(r() * 4); // zufällige Zahl zwischen 0 und 3
+
+    const [dx, dy] = richtungen[richtung]; // zufällige Richtung auswählen
+
+    // TODO 2: nur weitergehen, wenn das neue Feld nicht am Rand liegt
+    //         (Rand: x = 0, y = 0, x = Breite - 1, y = Höhe - 1)
+    const nx = x + dx, ny = y + dy;
+    if (nx > 0 && nx < karte[0].length - 1 && ny > 0 && ny < karte.length - 1) {
+      x = nx;
+      y = ny;
+    }
+
+
+    // TODO 3: das Feld, auf dem der Walker steht, zu Boden machen
+    karte[y][x] = 0;
+
+
+  }
+  return karte;
+}
+
+// ── Aufgabe 4.4 · Zellulärer Automat ────────────────────────────────────
+// Liefert ein NEUES Raster. Eine Zelle wird Wand, wenn 5 oder mehr ihrer
+// 8 Nachbarn Wand sind, sonst Boden. waendeRingsum(karte, x, y) zählt sie.
+function glaetten(karte) {
+  // TODO 1: ein neues Raster anlegen (Kopie: karte.map(zeile => zeile.slice()))
+  const neu = karte.map(zeile => zeile.slice());
+  // TODO 2: für jede Zelle die Regel anwenden, gezählt wird im ALTEN Raster
+  for (let y = 0; y < karte.length; y++) {
+    for (let x = 0; x < karte[0].length; x++) {
+      const nachbarn = waendeRingsum(karte, x, y);
+      neu[y][x] = nachbarn >= 5 ? 1 : 0;
+    }
+  }
+  // TODO 3: das neue Raster zurückgeben
+  return neu;
+}
+
+// ── Aufgabe 4.5 · Erzeugen und prüfen ───────────────────────────────────
+// hoehle(seed) liefert {karte, start, ziel}. Gesucht ist die erste Höhle ab
+// startSeed, deren Ziel erreichbar ist und deren Weg mindestens MIN_WEG lang ist.
+// Liefert {karte, start, ziel, seed}. Nach 1000 Versuchen: null.
+function spielbareKarte(startSeed) {
+  // TODO: Seeds ab startSeed durchgehen, Höhle erzeugen, beide Bedingungen
+  //       prüfen, die erste passende zurückgeben.
+  return null;
+}
+
+// ── Aufgabe 4.6 · Kreuzung und Mutation ─────────────────────────────────
+// Ein Genom ist eine Liste von 40 Richtungen: 0 hoch, 1 rechts, 2 runter, 3 links.
+function kreuzen(a, b, r) {
+  // TODO: Schnittstelle zufällig zwischen 1 und 39 wählen,
+  //       vorne die Gene von a, ab der Schnittstelle die Gene von b.
+  return [];
+}
+function mutieren(genom, rate, r) {
+  // TODO: eine NEUE Liste liefern. Jedes Gen wird mit Wahrscheinlichkeit
+  //       rate durch eine zufällige Richtung 0 bis 3 ersetzt.
+  return [];
+}
+
+// ── Aufgabe 4.7 · Neuroevolution ────────────────────────────────────────
+// laeufer hat: strecke (Pixel), hindernisse (überwunden), spruenge, lebt.
+// Je grösser der Wert, desto besser war der Läufer.
+function fitness(laeufer) {
+  // TODO: Wie gut war dieser Läufer?
+  return 0;
+}
+
+// ═══════════════════════ ENDE IHR CODE ═══════════════════════════════
+</script>
+<script>
+// ── Fundament: hier nichts ändern ────────────────────────────────────────
+const W = 640, H = 400;
+const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+(function hiDpi(){ const d = Math.max(1, window.devicePixelRatio || 1); cv.width = W * d; cv.height = H * d; ctx.setTransform(d, 0, 0, d, 0, 0); })();
+const COL = {ink:'#1f2430', muted:'#5b6472', line:'#e4e2dc', red:'#c8102e', teal:'#0e7490', violet:'#5b4a9e', ok:'#166534', wall:'#3b4252', floor:'#f4efe4', earth:'#8a7356', grass:'#7aa35a', grid:'#efede8'};
+
+const missing = ['baueStrecke','welle','graben','glaetten','spielbareKarte','kreuzen','mutieren','fitness'].filter(n => typeof window[n] !== 'function');
+if (missing.length) { const el = document.getElementById('err'); el.style.display = 'block';
+  el.textContent = 'Ihr Code im Block IHR CODE enthält einen Syntaxfehler. Öffnen Sie die Konsole mit F12, dort steht die Zeile.'; }
+
+// ── Zufall mit Seed ──
+// mulberry32(seed) liefert einen Zufallsgenerator r. Jeder Aufruf r() gibt die
+// nächste Zahl von 0 bis unter 1. Gleicher Seed, gleiche Folge.
+function mulberry32(seed){ let a = seed >>> 0; return function(){ a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+function zufallsZahl(r, a, b){ return a + Math.floor(r() * (b - a + 1)); }   // ganze Zahl von a bis b
+
+// ── Raster ──
+function neuesRaster(breite, hoehe, wert){ return Array.from({length: hoehe}, () => Array(breite).fill(wert)); }
+function kopie(k){ return k.map(z => z.slice()); }
+function gleich(a, b){ return JSON.stringify(a) === JSON.stringify(b); }
+function bodenfelder(k){ let n = 0; k.forEach(z => z.forEach(v => { if (v === 0) n++; })); return n; }
+// Wie viele der 8 Nachbarn sind Wand? Ausserhalb der Karte zählt als Wand.
+function waendeRingsum(karte, x, y){ let n = 0; for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { if (!dx && !dy) continue; const yy = y + dy, xx = x + dx; if (yy < 0 || xx < 0 || yy >= karte.length || xx >= karte[0].length || karte[yy][xx] === 1) n++; } return n; }
+// Flutfüllung (Breitensuche aus Block 3): alle Felder, die vom Start aus über Boden erreichbar sind
+function flut(k, sx, sy){ const seen = neuesRaster(k[0].length, k.length, false); if (k[sy][sx] === 1) return seen; const q = [[sx, sy]]; seen[sy][sx] = true; while (q.length) { const [x, y] = q.shift(); for (const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1]]) { const nx = x + dx, ny = y + dy; if (nx >= 0 && ny >= 0 && ny < k.length && nx < k[0].length && k[ny][nx] !== 1 && !seen[ny][nx]) { seen[ny][nx] = true; q.push([nx, ny]); } } } return seen; }
+function erreichbar(karte, start, ziel){ return flut(karte, start.x, start.y)[ziel.y][ziel.x]; }
+// Länge des kürzesten Wegs in Schritten, -1 wenn es keinen gibt
+function weglaenge(karte, start, ziel){ const k = karte, d = neuesRaster(k[0].length, k.length, -1); if (k[start.y][start.x] === 1) return -1; d[start.y][start.x] = 0; const q = [[start.x, start.y]]; while (q.length) { const [x, y] = q.shift(); if (x === ziel.x && y === ziel.y) return d[y][x]; for (const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1]]) { const nx = x + dx, ny = y + dy; if (nx >= 0 && ny >= 0 && ny < k.length && nx < k[0].length && k[ny][nx] !== 1 && d[ny][nx] < 0) { d[ny][nx] = d[y][x] + 1; q.push([nx, ny]); } } } return -1; }
+function wegZellen(karte, start, ziel){ const k = karte, von = new Map(), key = (x, y) => x + ',' + y; von.set(key(start.x, start.y), null); const q = [[start.x, start.y]]; while (q.length) { const [x, y] = q.shift(); if (x === ziel.x && y === ziel.y) { const w = []; let c = key(x, y); while (c) { w.push(c.split(',').map(Number)); c = von.get(c); } return w.reverse(); } for (const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1]]) { const nx = x + dx, ny = y + dy; if (nx >= 0 && ny >= 0 && ny < k.length && nx < k[0].length && k[ny][nx] !== 1 && !von.has(key(nx, ny))) { von.set(key(nx, ny), key(x, y)); q.push([nx, ny]); } } } return []; }
+
+// ── Referenzen für den Prüfstand und für hoehle ──
+function _baueStrecke(seed){ const r = mulberry32(seed), h = [3]; for (let c = 1; c < 24; c++) h.push(Math.max(1, Math.min(7, h[c - 1] + zufallsZahl(r, -1, 1)))); return h; }
+function _glaetten(k){ const n = kopie(k); for (let y = 0; y < k.length; y++) for (let x = 0; x < k[0].length; x++) n[y][x] = waendeRingsum(k, x, y) >= 5 ? 1 : 0; return n; }
+
+// ── 4.2 Gegner ──
+const GEGNER = [{name: 'Schleim', kosten: 2}, {name: 'Fledermaus', kosten: 3}, {name: 'Ritter', kosten: 5}];
+function kosten(liste){ return liste.reduce((s, n) => s + ((GEGNER.find(g => g.name === n) || {kosten: 0}).kosten), 0); }
+
+// ── 4.5 Höhlen ──
+const HB = 40, HH = 24, MIN_WEG = 40;
+// hoehle(seed): zellulärer Automat mit 55 Prozent Wänden und vier Durchgängen.
+// Start ist der Boden nahe der Mitte links, Ziel der Boden nahe der Mitte rechts.
+function hoehle(seed){
+  const r = mulberry32(seed); let k = neuesRaster(HB, HH, 1);
+  for (let y = 1; y < HH - 1; y++) for (let x = 1; x < HB - 1; x++) k[y][x] = r() < 0.55 ? 1 : 0;
+  for (let i = 0; i < 4; i++) k = _glaetten(k);
+  const naechster = (zx, zy) => { let best = null, bd = 1e9; for (let y = 1; y < HH - 1; y++) for (let x = 1; x < HB - 1; x++) if (!k[y][x]) { const d = Math.abs(x - zx) + Math.abs(y - zy); if (d < bd) { bd = d; best = {x, y}; } } return best; };
+  return {karte: k, start: naechster(2, HH >> 1), ziel: naechster(HB - 3, HH >> 1)};
+}
+function _spielbare(startSeed){ for (let s = startSeed; s < startSeed + 1000; s++) { const h = hoehle(s); if (erreichbar(h.karte, h.start, h.ziel) && weglaenge(h.karte, h.start, h.ziel) >= MIN_WEG) return s; } return null; }
+
+// ── 4.6 Ein Punkt sucht seinen Weg ──
+const EB = 20, EH = 14, GENE = 40, POP = 30, START6 = {x: 1, y: 12}, ZIEL6 = {x: 18, y: 1};
+const RICHTUNG = [[0, -1], [1, 0], [0, 1], [-1, 0]];   // 0 hoch, 1 rechts, 2 runter, 3 links
+function wand6(x, y){ return x < 0 || y < 0 || x >= EB || y >= EH || (x === 10 && y >= 4); }
+function laufe(genom){ let x = START6.x, y = START6.y; const weg = [[x, y]]; for (let i = 0; i < genom.length; i++) { const d = RICHTUNG[genom[i]]; if (!d) continue; if (!wand6(x + d[0], y + d[1])) { x += d[0]; y += d[1]; } weg.push([x, y]); if (x === ZIEL6.x && y === ZIEL6.y) return {weg, angekommen: true, schritte: i + 1}; } return {weg, angekommen: false, schritte: genom.length}; }
+// Fitness wie auf den Folien: 1 / (1 + Abstand zum Ziel), wer das Ziel erreicht, bekommt 2
+function fitnessWeg(genom){ const l = laufe(genom), [x, y] = l.weg[l.weg.length - 1]; return l.angekommen ? 2 : 1 / (1 + Math.hypot(x - ZIEL6.x, y - ZIEL6.y)); }
+// Turnierselektion: drei zufällig ziehen, der beste gewinnt
+function turnier(pop, fit, r){ let best = -1; for (let i = 0; i < 3; i++) { const j = Math.floor(r() * pop.length); if (best < 0 || fit[j] > fit[best]) best = j; } return pop[best]; }
+function zufallsGenom(r){ return Array.from({length: GENE}, () => Math.floor(r() * 4)); }
+function generation6(pop, r){
+  const fit = pop.map(fitnessWeg), idx = pop.map((_, i) => i).sort((a, b) => fit[b] - fit[a]);
+  const neu = [pop[idx[0]].slice(), pop[idx[1]].slice()];                 // Elitismus: die zwei besten bleiben
+  while (neu.length < POP) neu.push(mutieren(kreuzen(turnier(pop, fit, r), turnier(pop, fit, r), r), 0.05, r) || []);
+  return {neu, fit, besteFitness: fit[idx[0]], bester: pop[idx[0]]};
+}
+function evolution6(seed, gens){ const r = mulberry32(seed); let pop = Array.from({length: POP}, () => zufallsGenom(r)); for (let g = 0; g < gens; g++) pop = generation6(pop, r).neu; const fit = pop.map(fitnessWeg); let b = 0; fit.forEach((f, i) => { if (f > fit[b]) b = i; }); return {bester: pop[b], fitness: fit[b]}; }
+
+// ── 4.7 Ein Läufer lernt springen ──
+const LX = 80, LB = 24, LH = 36, TEMPO = 260, GRAV = 2000, SPRUNG = 640, DT = 1 / 60, ANZ_HIND = 30, BODEN = 330;
+function strecke(seed){ const r = mulberry32(seed), h = []; let x = 420; for (let i = 0; i < ANZ_HIND; i++) { const hoch = r() < 0.5; h.push({x, w: hoch ? 22 : 30, h: hoch ? 70 : 30}); x += 170 + Math.floor(r() * 220); } return h; }
+// Das Gehirn: 2 Eingänge und ein fester Eingang 1 (Bias) → 4 versteckte Neuronen (tanh) → 1 Ausgang.
+// 3 · 4 + 4 + 1 = 17 Gewichte. Ausgang grösser als 0 heisst: springen.
+function denke(gewichte, abstand, hoehe){ const ein = [abstand, hoehe, 1], ver = [];
+  for (let j = 0; j < 4; j++) { let s = 0; for (let i = 0; i < 3; i++) s += ein[i] * gewichte[j * 3 + i]; ver.push(Math.tanh(s)); }
+  let o = gewichte[16]; for (let j = 0; j < 4; j++) o += ver[j] * gewichte[12 + j]; return o; }
+function simuliere(gewichte, hind, protokoll){
+  const L = {strecke: 0, spruenge: 0, hindernisse: 0, lebt: true, y: 0, vy: 0};
+  for (let t = 0; t < 3600 && L.lebt; t++) {
+    const naechstes = hind.find(o => o.x + o.w - L.strecke > LX); if (!naechstes) break;
+    const abstand = Math.min(1, (naechstes.x - L.strecke - (LX + LB)) / 300), hoehe = naechstes.h / 70;
+    if (L.y === 0 && denke(gewichte, abstand, hoehe) > 0) { L.vy = SPRUNG; L.spruenge++; }
+    L.vy -= GRAV * DT; L.y = Math.max(0, L.y + L.vy * DT); if (L.y === 0) L.vy = 0;
+    L.strecke += TEMPO * DT;
+    for (const o of hind) { const ox = o.x - L.strecke; if (ox < LX + LB && ox + o.w > LX && L.y < o.h) { L.lebt = false; break; } }
+    L.hindernisse = hind.filter(o => o.x + o.w - L.strecke < LX).length;
+    if (protokoll) protokoll.push({y: L.y, s: L.strecke, lebt: L.lebt});
+  }
+  return L;
+}
+function mutiereGewichte(g, r){ return g.map(w => r() < 0.2 ? w + (r() + r() + r() - 1.5) * 0.8 : w); }   // kleine Zufallswerte addieren
+function generation7(pop, r, kursSeed){
+  const hind = strecke(kursSeed), laeufer = pop.map(w => simuliere(w, hind));
+  const fit = laeufer.map(l => { const f = fitness(l); return typeof f === 'number' && isFinite(f) ? f : 0; });
+  const idx = pop.map((_, i) => i).sort((a, b) => fit[b] - fit[a]);
+  const neu = [pop[idx[0]].slice(), pop[idx[1]].slice()];
+  while (neu.length < pop.length) neu.push(mutiereGewichte(turnier(pop, fit, r), r));
+  return {neu, bester: pop[idx[0]], besterLaeufer: laeufer[idx[0]], hind};
+}
+function startPop7(r){ return Array.from({length: 40}, () => Array.from({length: 17}, () => (r() * 2 - 1) * 2)); }
+function evolution7(seed, gens){ const r = mulberry32(seed); let pop = startPop7(r), last = null; for (let g = 0; g < gens; g++) { last = generation7(pop, r, seed * 1000 + g); pop = last.neu; } return {pop, bester: last.bester}; }
+
+// ── Zeichnen ──
+function txt(s, x, y, o){ o = o || {}; ctx.font = (o.mono ? '600 ' + (o.size || 14) + 'px ui-monospace, Consolas, monospace' : (o.weight || 600) + ' ' + (o.size || 14) + 'px system-ui, sans-serif');
+  ctx.fillStyle = o.color || COL.ink; ctx.textAlign = o.align || 'left'; ctx.textBaseline = 'middle'; ctx.fillText(s, x, y); }
+function zeichneKarte(k, x0, y0, z){ for (let y = 0; y < k.length; y++) for (let x = 0; x < k[0].length; x++) { ctx.fillStyle = k[y][x] === 1 ? COL.wall : COL.floor; ctx.fillRect(x0 + x * z, y0 + y * z, z, z); } }
+function feld(x0, y0, z, x, y, c, pad){ pad = pad || 0; ctx.fillStyle = c; ctx.fillRect(x0 + x * z + pad, y0 + y * z + pad, z - 2 * pad, z - 2 * pad); }
+function fmt(v){ return JSON.stringify(v); }
+function kurz(a){ if (!Array.isArray(a)) return fmt(a); return '[' + a.slice(0, 8).join(', ') + (a.length > 8 ? ', …' : '') + ']' + ' (Länge ' + a.length + ')'; }
+function ctl(html){ document.getElementById('ctl').innerHTML = html; }
+function seedFeld(id, wert){ return '<label>Seed <input type="number" id="' + id + '" value="' + wert + '" style="width:80px"></label>'; }
+
+// Schwere Prüfungen nur einmal rechnen: Ihr Code ändert sich erst beim Neuladen
+const MEMO = {};
+function einmal(key, f){ if (!(key in MEMO)) { try { MEMO[key] = {v: f()}; } catch (e) { MEMO[key] = {e: e.message}; } } if (MEMO[key].e) throw new Error(MEMO[key].e); return MEMO[key].v; }
+
+// ── Szenen ──────────────────────────────────────────────────────────────
+const S = {};
+
+/* 4.1 */
+S['4.1'] = {
+  title: '4.1 · Gleicher Seed, gleiche Welt',
+  text: 'Oben wird die Strecke zweimal mit demselben Seed erzeugt, unten mit dem Seed plus eins. Mit dem Feld wählen Sie den Seed, «neu erzeugen» startet beide Läufe noch einmal.',
+  init(){ ctl(seedFeld('s41', 42) + ' <button type="button" id="b41">neu erzeugen</button>');
+    const go = () => { const s = +document.getElementById('s41').value || 0; this.seed = s; this.a = baueStrecke(s); this.b = baueStrecke(s); this.c = baueStrecke(s + 1); };
+    document.getElementById('b41').onclick = go; document.getElementById('s41').onchange = go; go(); },
+  step(){},
+  draw(){
+    const bahn = (y0, h, label, farbe) => { txt(label, 16, y0 + 12, {size: 14, color: farbe, weight: 700});
+      (h || []).forEach((v, c) => { for (let k = 0; k < v; k++) { ctx.fillStyle = k === v - 1 ? COL.grass : COL.earth; ctx.fillRect(16 + c * 25, y0 + 108 - (k + 1) * 12, 23, 11); } }); };
+    bahn(28, this.a, 'Seed ' + this.seed + ', erster Lauf', COL.teal);
+    bahn(140, this.b, 'Seed ' + this.seed + ', zweiter Lauf', COL.teal);
+    bahn(252, this.c, 'Seed ' + (this.seed + 1), COL.violet);
+    const same = gleich(this.a, this.b);
+    txt(same ? '✓ beide Läufe gleich' : '✗ die Läufe unterscheiden sich', 630, 152, {align: 'right', size: 14, color: same ? COL.ok : COL.red, weight: 700}); // Hinweis
+  },
+  tests(){ return [
+    ['Seed 42 ergibt die Strecke aus mulberry32(42)', () => { const g = baueStrecke(42), e = _baueStrecke(42); return [gleich(g, e), 'erwartet ' + kurz(e) + ', erhalten ' + kurz(g)]; }],
+    ['Zweimal Seed 42 ergibt dieselbe Strecke', () => { const a = baueStrecke(42), b = baueStrecke(42); return [gleich(a, b), 'erster Lauf ' + kurz(a) + ', zweiter Lauf ' + kurz(b)]; }],
+    ['Seed 43 ergibt eine andere, aber ebenso feste Strecke', () => { const g = baueStrecke(43), e = _baueStrecke(43); return [gleich(g, e) && !gleich(g, _baueStrecke(42)), 'erwartet ' + kurz(e) + ', erhalten ' + kurz(g)]; }]
+  ]; }
+};
+
+/* 4.2 */
+S['4.2'] = {
+  title: '4.2 · Gegnerwelle mit Budget',
+  text: 'Jede Zeile ist eine Welle. Der graue Balken ist ihr Budget, die farbigen Felder sind die gewählten Gegner mit ihren Kosten: S Schleim (2), F Fledermaus (3), R Ritter (5). Mit dem Seed ändern sich die Gegner, nicht das Budget.',
+  init(){ ctl(seedFeld('s42', 7) + ' <button type="button" id="b42">neu erzeugen</button>');
+    const go = () => { const s = +document.getElementById('s42').value || 0; const r = mulberry32(s); this.wellen = []; for (let n = 1; n <= 8; n++) { let w; try { w = welle(n, r); } catch (e) { w = []; } this.wellen.push(Array.isArray(w) ? w : []); } };
+    document.getElementById('b42').onclick = go; document.getElementById('s42').onchange = go; go(); },
+  step(){},
+  draw(){
+    const farbe = {Schleim: '#7aa35a', Fledermaus: '#5b4a9e', Ritter: '#c8102e'}, px = 8.6;
+    this.wellen.forEach((w, i) => { const y = 34 + i * 44, budget = 10 + 5 * (i + 1);
+      txt('Welle ' + (i + 1), 16, y + 14, {size: 14, weight: 700});
+      ctx.fillStyle = '#ebe8e1'; ctx.fillRect(100, y, budget * px, 28);
+      let x = 100; w.forEach(n => { const k = (GEGNER.find(g => g.name === n) || {kosten: 1}).kosten; ctx.fillStyle = farbe[n] || '#999'; ctx.fillRect(x + 1, y + 2, k * px - 2, 24); txt(n[0], x + k * px / 2, y + 14, {align: 'center', color: '#fff', size: 13, weight: 800}); x += k * px; });
+      txt(kosten(w) + ' von ' + budget, 100 + budget * px + 10, y + 14, {size: 13, color: COL.muted, mono: true}); });
+  },
+  tests(){ const T = [];
+    T.push(['Jede Welle nutzt ihr Budget, ohne es zu überschreiten', () => { const r = mulberry32(7), aus = []; let ok = true; for (let n = 1; n <= 6; n++) { const w = welle(n, r), b = 10 + 5 * n, k = kosten(w); aus.push(k + '/' + b); if (!(k <= b && k >= b - 1)) ok = false; } return [ok, 'Kosten je Welle 1 bis 6: ' + aus.join(', ') + ' (erwartet: höchstens das Budget, höchstens 1 darunter)']; }]);
+    T.push(['Nur Gegner aus GEGNER', () => { const w = welle(3, mulberry32(2)); return [Array.isArray(w) && w.length > 0 && w.every(n => GEGNER.some(g => g.name === n)), 'erhalten ' + fmt(w)]; }]);
+    T.push(['Spätere Wellen kosten mehr', () => { const a = kosten(welle(1, mulberry32(4))), b = kosten(welle(6, mulberry32(4))); return [b > a && a > 0, 'Welle 1 kostet ' + a + ', Welle 6 kostet ' + b]; }]);
+    T.push(['Gleicher Seed, gleiche Welle', () => { const a = welle(4, mulberry32(5)), b = welle(4, mulberry32(5)); return [a.length > 0 && gleich(a, b), fmt(a) + ' und ' + fmt(b)]; }]);
+    T.push(['Der Zufall wählt mit: andere Seeds, andere Wellen', () => { const set = new Set(); for (let s = 1; s <= 5; s++) set.add(fmt(welle(4, mulberry32(s)))); return [set.size >= 2 && !set.has('[]'), set.size + ' verschiedene Wellen bei 5 Seeds']; }]);
+    return T; }
+};
+
+/* 4.3 */
+S['4.3'] = {
+  title: '4.3 · Random Walk',
+  text: 'Der Walker startet in der Mitte und geht zufällig. Wo er war, ist Boden. Mit dem Regler wählen Sie die Zahl der Schritte, mit dem Seed eine andere Höhle. Die Animation zeigt, wie die Höhle Schritt für Schritt wächst.',
+  init(){ ctl('<label>Schritte <input type="range" id="r43" min="100" max="2000" step="50" value="800"> <span id="v43" class="mono">800</span></label>' + seedFeld('s43', 3) + ' <button type="button" id="b43">von vorn</button>');
+    const go = () => { this.ziel = +document.getElementById('r43').value; document.getElementById('v43').textContent = this.ziel; this.seed = +document.getElementById('s43').value || 0; this.k = 0; };
+    ['r43', 's43'].forEach(id => document.getElementById(id).oninput = go); document.getElementById('b43').onclick = go; go(); },
+  step(dt){ this.k = Math.min(this.ziel, this.k + Math.max(6, this.ziel * dt / 2)); },
+  draw(){
+    const k = neuesRaster(40, 24, 1); graben(k, Math.floor(this.k), mulberry32(this.seed));
+    zeichneKarte(k, 40, 30, 14);
+    txt('Schritte: ' + Math.floor(this.k) + ' von ' + this.ziel + '   Bodenfelder: ' + bodenfelder(k), 40, 18, {mono: true, size: 13, color: COL.muted});
+    feld(40, 30, 14, 20, 12, COL.ok, 3);
+  },
+  tests(){ const dig = (n, s) => graben(neuesRaster(40, 24, 1), n, mulberry32(s)); return [
+    ['Mehr Schritte ergeben mehr Boden', () => { const a = bodenfelder(dig(300, 3)), b = bodenfelder(dig(1500, 3)); return [a > 30 && b > a, '300 Schritte: ' + a + ' Bodenfelder, 1500 Schritte: ' + b]; }],
+    ['Der Rand bleibt Wand', () => { const k = dig(2000, 5); let rand = 0; k.forEach((z, y) => z.forEach((v, x) => { if ((x === 0 || y === 0 || x === 39 || y === 23) && v === 0) rand++; })); return [bodenfelder(k) > 30 && rand === 0, rand + ' Randfelder sind Boden, ' + bodenfelder(k) + ' Bodenfelder insgesamt']; }],
+    ['Aller Boden hängt zusammen', () => { const k = dig(1200, 7), f = flut(k, 20, 12); let los = 0; k.forEach((z, y) => z.forEach((v, x) => { if (v === 0 && !f[y][x]) los++; })); return [bodenfelder(k) > 30 && los === 0, los + ' Bodenfelder sind von der Mitte aus nicht erreichbar']; }],
+    ['Gleicher Seed, gleiche Höhle', () => { const a = dig(800, 9), b = dig(800, 9); return [bodenfelder(a) > 30 && gleich(a, b), bodenfelder(a) + ' und ' + bodenfelder(b) + ' Bodenfelder, gleich: ' + gleich(a, b)]; }]
+  ]; }
+};
+
+/* 4.4 */
+function zufallsKarte(seed, anteil){ const r = mulberry32(seed), k = neuesRaster(40, 24, 1); for (let y = 1; y < 23; y++) for (let x = 1; x < 39; x++) k[y][x] = r() < anteil ? 1 : 0; return k; }
+S['4.4'] = {
+  title: '4.4 · Zellulärer Automat',
+  text: 'Links der Zustand vor dem Durchgang, rechts danach. «glätten» wendet Ihre Regel einmal auf das ganze Raster an, «von vorn» würfelt neu mit 55 Prozent Wänden.',
+  init(){ ctl(seedFeld('s44', 11) + ' <button type="button" id="b44">glätten</button> <button type="button" id="c44">von vorn</button>');
+    const neu = () => { this.k = zufallsKarte(+document.getElementById('s44').value || 0, 0.55); this.vor = this.k; this.n = 0; };
+    document.getElementById('c44').onclick = neu; document.getElementById('s44').onchange = neu;
+    document.getElementById('b44').onclick = () => { try { this.vor = this.k; this.k = glaetten(kopie(this.k)) || this.k; this.n++; } catch (e) { this.err = e.message; } };
+    neu(); },
+  step(){},
+  draw(){
+    txt('vorher', 20, 20, {size: 13, color: COL.muted, weight: 700}); zeichneKarte(this.vor, 20, 32, 7.5);
+    txt('nach Durchgang ' + this.n, 330, 20, {size: 13, color: COL.teal, weight: 700}); zeichneKarte(this.k, 330, 32, 7.5);
+    txt('Regel: Wand, wenn 5 oder mehr der 8 Nachbarn Wand sind', 20, 230, {size: 14});
+  },
+  tests(){ const k0 = zufallsKarte(11, 0.55); return [
+    ['Ein Durchgang folgt der Regel', () => { const g = glaetten(kopie(k0)), e = _glaetten(k0); let diff = 0; e.forEach((z, y) => z.forEach((v, x) => { if (!g || !g[y] || g[y][x] !== v) diff++; })); return [diff === 0, diff + ' von 960 Zellen weichen von der Regel ab']; }],
+    ['Vier Durchgänge ergeben die erwartete Höhle', () => { let g = kopie(k0), e = k0; for (let i = 0; i < 4; i++) { g = glaetten(g); e = _glaetten(e); } return [gleich(g, e), gleich(g, e) ? 'gleich' : 'die Höhle weicht ab']; }],
+    ['Das alte Raster bleibt unverändert, das Ergebnis ist ein neues', () => { const a = kopie(k0), g = glaetten(a); return [g !== a && gleich(a, k0), g === a ? 'glaetten liefert dasselbe Raster zurück, das es bekommen hat' : (gleich(a, k0) ? 'in Ordnung' : 'das übergebene Raster wurde verändert')]; }]
+  ]; }
+};
+
+/* 4.5 */
+S['4.5'] = {
+  title: '4.5 · Erzeugen und prüfen',
+  text: 'Links stehen die Seeds, die Ihr spielbareKarte ausprobiert hat, mit dem Grund, warum eine Höhle durchfiel. Rechts die erste Höhle, die besteht, mit dem kürzesten Weg vom Start (grün) zum Ziel (rot).',
+  init(){ ctl('<label>Startseed <input type="number" id="s45" value="14" style="width:80px"></label>');
+    const go = () => { const s = +document.getElementById('s45').value || 0; let res = null; try { res = spielbareKarte(s); } catch (e) { this.err = e.message; } this.res = res; this.liste = [];
+      const bis = res && typeof res.seed === 'number' ? res.seed : s + 7;
+      for (let t = s; t <= Math.min(bis, s + 12); t++) { const h = hoehle(t), er = erreichbar(h.karte, h.start, h.ziel), wl = er ? weglaenge(h.karte, h.start, h.ziel) : -1;
+        this.liste.push({t, grund: !er ? 'nicht erreichbar' : (wl < MIN_WEG ? 'Weg nur ' + wl : 'besteht, Weg ' + wl), ok: er && wl >= MIN_WEG}); } };
+    document.getElementById('s45').onchange = go; go(); },
+  step(){},
+  draw(){
+    txt('Seeds ab ' + document.getElementById('s45').value, 14, 18, {size: 13, weight: 700, color: COL.muted});
+    this.liste.forEach((e, i) => txt((e.ok ? '✓ ' : '✗ ') + e.t + ': ' + e.grund, 14, 44 + i * 22, {size: 13, color: e.ok ? COL.ok : COL.red, mono: true}));
+    if (this.res && this.res.karte) { const z = 8.6, x0 = 282, y0 = 40; zeichneKarte(this.res.karte, x0, y0, z);
+      wegZellen(this.res.karte, this.res.start, this.res.ziel).forEach(([x, y]) => feld(x0, y0, z, x, y, 'rgba(14,116,144,.55)', 2));
+      feld(x0, y0, z, this.res.start.x, this.res.start.y, COL.ok); feld(x0, y0, z, this.res.ziel.x, this.res.ziel.y, COL.red);
+      txt('Ihr Ergebnis: Seed ' + this.res.seed + ', Weg ' + weglaenge(this.res.karte, this.res.start, this.res.ziel), x0, 22, {size: 14, weight: 700, color: COL.teal}); }
+    else txt('spielbareKarte liefert noch keine Höhle', 282, 150, {size: 15, color: COL.red});
+  },
+  tests(){ const res = () => einmal('45a', () => spielbareKarte(14)); return [
+    ['Ab Startseed 14 kommt eine Höhle mit Seed ab 14', () => { const r = res(); return [!!r && typeof r.seed === 'number' && r.seed >= 14 && !!r.karte, 'erhalten ' + (r ? 'Seed ' + r.seed : fmt(r))]; }],
+    ['Ihr Ziel ist erreichbar', () => { const r = res(); return [!!r && !!r.karte && erreichbar(r.karte, r.start, r.ziel), r ? 'erreichbar: ' + (r.karte ? erreichbar(r.karte, r.start, r.ziel) : '?') : 'keine Höhle']; }],
+    ['Ihr Weg ist mindestens MIN_WEG lang', () => { const r = res(); const wl = r && r.karte ? weglaenge(r.karte, r.start, r.ziel) : -1; return [wl >= MIN_WEG, 'Weglänge ' + wl + ', verlangt ' + MIN_WEG]; }],
+    ['Es ist die erste passende Höhle ab dem Startseed', () => { const a = einmal('45b', () => spielbareKarte(4)), b = res(); const ea = _spielbare(4), eb = _spielbare(14); return [!!a && !!b && a.seed === ea && b.seed === eb, 'ab 4: erwartet ' + ea + ', erhalten ' + (a && a.seed) + '; ab 14: erwartet ' + eb + ', erhalten ' + (b && b.seed)]; }]
+  ]; }
+};
+
+/* 4.6 */
+S['4.6'] = {
+  title: '4.6 · Kreuzung und Mutation',
+  text: 'Ein Punkt startet unten links (grün) und soll das Ziel oben rechts (rot) erreichen. Sein Genom sind 40 Schritte. Dünn gezeichnet ist die ganze Population, dick der beste Weg dieser Generation. Rechts unten die beste Fitness je Generation: 1 / (1 + Abstand), bei 2 ist das Ziel erreicht.',
+  init(){ ctl('<button type="button" id="p46">Pause</button> <button type="button" id="n46">neu starten</button>' + seedFeld('s46', 3));
+    const neu = () => { this.r = mulberry32(+document.getElementById('s46').value || 0); this.pop = Array.from({length: POP}, () => zufallsGenom(this.r)); this.gen = 0; this.kurve = []; this.t = 0; this.lauf = true; document.getElementById('p46').textContent = 'Pause'; };
+    document.getElementById('n46').onclick = neu; document.getElementById('s46').onchange = neu;
+    document.getElementById('p46').onclick = () => { this.lauf = !this.lauf; document.getElementById('p46').textContent = this.lauf ? 'Pause' : 'weiter'; };
+    neu(); },
+  step(dt){ this.t += dt; if (!this.lauf || this.t < 0.18 || this.gen >= 150) return; this.t = 0;
+    const e = generation6(this.pop, this.r); this.kurve.push(e.besteFitness); this.pop = e.neu.map(g => Array.isArray(g) ? g : []); this.gen++; },
+  draw(){
+    const z = 22, x0 = 14, y0 = 46;
+    for (let y = 0; y < EH; y++) for (let x = 0; x < EB; x++) { ctx.fillStyle = wand6(x, y) ? COL.wall : ((x + y) % 2 ? '#f4efe4' : '#efe9dc'); ctx.fillRect(x0 + x * z, y0 + y * z, z, z); }
+    feld(x0, y0, z, START6.x, START6.y, COL.ok); feld(x0, y0, z, ZIEL6.x, ZIEL6.y, COL.red);
+    const fit = this.pop.map(fitnessWeg); let b = 0; fit.forEach((f, i) => { if (f > fit[b]) b = i; });
+    const linie = (g, c, w) => { const l = laufe(g); ctx.strokeStyle = c; ctx.lineWidth = w; ctx.beginPath(); l.weg.forEach(([x, y], i) => { const px = x0 + x * z + z / 2, py = y0 + y * z + z / 2; i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); }); ctx.stroke(); return l; };
+    this.pop.forEach(g => linie(g, 'rgba(91,74,158,.18)', 1.5));
+    const l = linie(this.pop[b] || [], COL.violet, 3.5);
+    const [ex, ey] = l.weg[l.weg.length - 1]; ctx.beginPath(); ctx.arc(x0 + ex * z + z / 2, y0 + ey * z + z / 2, 6, 0, Math.PI * 2); ctx.fillStyle = COL.violet; ctx.fill();
+    txt('Generation ' + this.gen + '   beste Fitness ' + (fit[b] === undefined ? '-' : fit[b].toFixed(3)) + (l.angekommen ? '   Ziel erreicht in ' + l.schritte + ' Schritten' : ''), 14, 22, {size: 14, weight: 700});
+    // Kurve
+    const kx = 466, ky = 250, kw = 160, kh = 110; ctx.strokeStyle = COL.line; ctx.strokeRect(kx, ky, kw, kh);
+    ctx.strokeStyle = 'rgba(22,101,52,.4)'; ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.moveTo(kx, ky + 4); ctx.lineTo(kx + kw, ky + 4); ctx.stroke(); ctx.setLineDash([]);
+    ctx.strokeStyle = COL.teal; ctx.lineWidth = 2; ctx.beginPath(); this.kurve.forEach((f, i) => { const px = kx + i / 150 * kw, py = ky + kh - clamp(f / 2, 0, 1) * (kh - 4); i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); }); ctx.stroke();
+    txt('beste Fitness, oben 2 = Ziel erreicht', kx, ky - 10, {size: 12, color: COL.muted});
+  },
+  tests(){ const A = Array(GENE).fill(0), B = Array(GENE).fill(1); return [
+    ['kreuzen liefert 40 Gene', () => { const k = kreuzen(A, B, mulberry32(1)); return [Array.isArray(k) && k.length === GENE, 'Länge ' + (k && k.length)]; }],
+    ['Vorne Gene von a, ab der Schnittstelle Gene von b', () => { const r = mulberry32(2); for (let i = 0; i < 10; i++) { const k = kreuzen(A, B, r); const s = k.indexOf(1); if (!(k.length === GENE && s > 0 && k.slice(s).every(v => v === 1) && k.slice(0, s).every(v => v === 0))) return [false, 'Kind aus a = lauter 0 und b = lauter 1: ' + kurz(k) + ', erwartet: zuerst 0, dann nur noch 1']; } return [true, 'zehn Kinder geprüft']; }],
+    ['Die Schnittstelle ist zufällig', () => { const r = mulberry32(3), set = new Set(); for (let i = 0; i < 20; i++) set.add(kreuzen(A, B, r).indexOf(1)); return [set.size >= 5 && !set.has(-1) && !set.has(0), set.size + ' verschiedene Schnittstellen bei 20 Kreuzungen']; }],
+    ['mutieren mit rate 0 ändert nichts', () => { const g = zufallsGenom(mulberry32(4)), m = mutieren(g, 0, mulberry32(5)); return [gleich(g, m), 'erhalten ' + kurz(m)]; }],
+    ['mutieren mit rate 1 ändert etwa drei Viertel der Gene', () => { const g = zufallsGenom(mulberry32(6)), m = mutieren(g.slice(), 1, mulberry32(7)) || []; const n = m.length === GENE ? m.filter((v, i) => v !== g[i]).length : -1; return [n >= 20 && n <= 38, n < 0 ? 'Länge ' + m.length + ' statt 40' : n + ' von 40 Genen geändert (erwartet etwa 30, weil jede vierte zufällige Richtung zufällig gleich bleibt)']; }],
+    ['mutieren verändert das Original nicht', () => { const g = zufallsGenom(mulberry32(8)), alt = g.slice(), m = mutieren(g, 1, mulberry32(9)); return [Array.isArray(m) && m.length === GENE && m !== g && gleich(g, alt), m === g ? 'mutieren liefert dasselbe Genom zurück und hat es verändert' : (gleich(g, alt) ? 'Länge des Ergebnisses ' + (m && m.length) : 'das übergebene Genom wurde verändert')]; }],
+    ['Nach 60 Generationen erreicht der Beste das Ziel', () => { const e = einmal('46', () => evolution6(3, 60)), l = laufe(e.bester || []); return [l.angekommen, 'beste Fitness ' + (+e.fitness).toFixed(3) + (l.angekommen ? ', Ziel in ' + l.schritte + ' Schritten' : ', Ziel nicht erreicht')]; }]
+  ]; }
+};
+
+/* 4.7 */
+S['4.7'] = {
+  title: '4.7 · Ein Läufer lernt springen',
+  text: 'Jede Generation besteht aus 40 Läufern, jeder mit einem eigenen kleinen Netz. Alle laufen dieselbe Strecke, die Besten werden mutiert weitergegeben. Gezeigt wird der beste Läufer der letzten Generation auf seiner Strecke; rechts oben, wie viele Hindernisse der Beste je Generation überwunden hat (höchstens 30).',
+  init(){ ctl('<button type="button" id="p47">Pause</button> <button type="button" id="n47">neu starten</button>' + seedFeld('s47', 2));
+    const neu = () => { this.seed = +document.getElementById('s47').value || 0; this.r = mulberry32(this.seed); this.pop = startPop7(this.r); this.gen = 0; this.verlauf = []; this.film = null; this.lauf = true; document.getElementById('p47').textContent = 'Pause'; this.naechste(); };
+    this.naechste = () => { const e = generation7(this.pop, this.r, this.seed * 1000 + this.gen); this.pop = e.neu; this.gen++; this.verlauf.push(e.besterLaeufer.hindernisse); const prot = []; simuliere(e.bester, e.hind, prot); this.film = {prot, hind: e.hind, i: 0, L: e.besterLaeufer, f: (() => { try { return fitness(e.besterLaeufer); } catch (x) { return 'Fehler'; } })()}; };
+    document.getElementById('n47').onclick = neu; document.getElementById('s47').onchange = neu;
+    document.getElementById('p47').onclick = () => { this.lauf = !this.lauf; document.getElementById('p47').textContent = this.lauf ? 'Pause' : 'weiter'; };
+    neu(); },
+  step(dt){ if (!this.film) return; this.film.i += 2;   // doppelte Geschwindigkeit
+    if (this.film.i >= this.film.prot.length + 40) { if (this.lauf && this.gen < 60) this.naechste(); else this.film.i = 0; } },
+  draw(){
+    const f = this.film; if (!f) return; const p = f.prot[Math.min(f.i, f.prot.length - 1)] || {y: 0, s: 0, lebt: true};
+    ctx.fillStyle = '#eef4f8'; ctx.fillRect(0, 60, W, BODEN - 60); ctx.fillStyle = COL.earth; ctx.fillRect(0, BODEN, W, 24); ctx.fillStyle = COL.grass; ctx.fillRect(0, BODEN, W, 4);
+    f.hind.forEach(o => { const x = o.x - p.s; if (x > -40 && x < W) { ctx.fillStyle = o.h > 40 ? COL.wall : '#6b7280'; ctx.fillRect(x, BODEN - o.h, o.w, o.h); } });
+    ctx.fillStyle = p.lebt ? COL.violet : COL.red; ctx.fillRect(LX, BODEN - LH - p.y, LB, LH);
+    txt('Generation ' + this.gen + '   bester Läufer: ' + f.L.hindernisse + ' Hindernisse, ' + Math.round(f.L.strecke) + ' px, ' + f.L.spruenge + ' Sprünge, Ihre Fitness ' + (typeof f.f === 'number' ? Math.round(f.f) : f.f), 12, 20, {size: 13, weight: 700});
+    const kx = 470, ky = 72, kw = 160, kh = 70; ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.fillRect(kx, ky, kw, kh); ctx.strokeStyle = COL.line; ctx.strokeRect(kx, ky, kw, kh);
+    this.verlauf.forEach((v, i) => { const bw = kw / 60; ctx.fillStyle = COL.teal; ctx.fillRect(kx + i * bw, ky + kh - v / 30 * kh, Math.max(1, bw - 1), v / 30 * kh); });
+    txt('Hindernisse je Generation', kx, ky + kh + 12, {size: 11, color: COL.muted});
+  },
+  tests(){ return [
+    ['fitness liefert die zurückgelegte Strecke', () => { const v = fitness({strecke: 512, hindernisse: 3, spruenge: 9, lebt: false}); return [v === 512, 'erwartet 512, erhalten ' + fmt(v)]; }],
+    ['Wer weiter kommt, bekommt mehr Fitness', () => { const a = fitness({strecke: 900, hindernisse: 4, spruenge: 2, lebt: false}), b = fitness({strecke: 300, hindernisse: 1, spruenge: 8, lebt: false}); return [a > b, '900 px: ' + fmt(a) + ', 300 px: ' + fmt(b)]; }],
+    ['Nach 30 Generationen überwindet der Beste mindestens 10 Hindernisse', () => { const e = einmal('47', () => evolution7(2, 30)); const n = simuliere(e.bester, strecke(999)).hindernisse; return [n >= 10, n + ' von 30 Hindernissen auf einer neuen Strecke']; }]
+  ]; }
+};
+function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
+
+// ── Führung neben dem Bild (dieselben Schritte wie auf dem Übungsblatt) ──
+const GUIDE = {
+ "4.1": {
+  "eb": "Aufgabe 4.1 · Folie «Zufall im Computer ist eine Rechenvorschrift» · LZ 3",
+  "goal": "<code>baueStrecke(seed)</code> liefert für denselben Seed immer dieselbe Strecke und für einen anderen Seed eine andere. Im Moment benutzt sie <code>Math.random</code>.",
+  "steps": [
+   [
+    "Vorhersagen",
+    "Öffnen Sie die Szene 4.1, ohne etwas zu ändern. Beide oberen Läufe heissen «Seed 42». Sind sie gleich? Was passiert bei jedem Klick auf «neu erzeugen»?"
+   ],
+   [
+    "Bauen",
+    "In <code>baueStrecke</code> steht <code>const r = Math.random;</code>. Ersetzen Sie das durch einen Zufallsgenerator mit Seed: <code>mulberry32(seed)</code>. Sonst ändert sich nichts."
+   ],
+   [
+    "Prüfen",
+    "Speichern, neu laden, «Prüfen»: 3 von 3. Die beiden oberen Läufe sind jetzt gleich, der untere ist anders. Tippen Sie andere Seeds ein."
+   ],
+   [
+    "Brechen",
+    "Erzeugen Sie den Generator einmal für alle Aufrufe: <code>const r = mulberry32(42);</code> direkt über <code>function baueStrecke</code>, und löschen Sie die Zeile in der Funktion. Was zeigen die beiden oberen Läufe jetzt?"
+   ],
+   [
+    "Erklären",
+    "Eine Testerin meldet: «In Welt 4711 komme ich nicht über die dritte Mauer.» Was brauchen Sie von ihr, um den Fehler bei sich zu sehen, und warum genügt das?"
+   ]
+  ]
+ },
+ "4.2": {
+  "eb": "Aufgabe 4.2 · Folie «Gegnerwellen aus einem Budget» · LZ 1",
+  "goal": "<code>welle(nummer, r)</code> stellt eine Gegnerwelle zusammen, die ihr Budget ausschöpft, aber nie überschreitet. Das Budget ist <code>10 + 5 · nummer</code>, die Kosten stehen in <code>GEGNER</code>: Schleim 2, Fledermaus 3, Ritter 5. Auf der Folie wächst das Budget mit <code>4 + 3 · Welle</code>; hier ist es eine andere, steilere Kurve, das Prinzip ist dasselbe.",
+  "steps": [
+   [
+    "Vorhersagen",
+    "Welle 1 hat ein Budget von 15. Kann am Ende genau 1 Punkt übrig bleiben? Und 2 Punkte?"
+   ],
+   [
+    "Bauen",
+    "Budget berechnen. Dann eine Schleife: Welche Gegner passen noch ins Restbudget? Passt keiner, ist die Welle fertig. Sonst einen davon mit <code>r()</code> zufällig wählen, seinen Namen anhängen und seine Kosten abziehen."
+   ],
+   [
+    "Prüfen",
+    "«Prüfen»: 5 von 5. In der Szene ist jede Welle voller als die vorige. Ändern Sie den Seed: Die Mischung ändert sich, das Budget nicht."
+   ],
+   [
+    "Brechen",
+    "Ersetzen Sie die zufällige Wahl durch den teuersten passenden Gegner: <code>passend[passend.length - 1]</code>. Wie sehen die Wellen aus, und welcher Test schlägt fehl?"
+   ],
+   [
+    "Erklären",
+    "Welcher Teil einer Welle ist festgelegt, welcher ist dem Zufall überlassen? Verbinden Sie das mit der Faustregel «Struktur festlegen, Details dem Zufall überlassen»."
+   ]
+  ]
+ },
+ "4.3": {
+  "eb": "Aufgabe 4.3 · Folie «Random Walk: ein zufälliger Spaziergang gräbt die Gänge» · LZ 1 und 2",
+  "goal": "<code>graben(karte, schritte, r)</code> gräbt mit einem zufälligen Spaziergang eine Höhle in eine Karte aus lauter Wand. Der Walker startet in der Mitte, macht in jedem Schritt einen Schritt in eine zufällige von vier Richtungen und bleibt innerhalb des Randes.",
+  "steps": [
+   [
+    "Vorhersagen",
+    "Der Walker macht 800 Schritte. Entstehen 800 Bodenfelder, mehr oder weniger? Kann es Bodenfelder geben, die nicht mit den anderen verbunden sind?"
+   ],
+   [
+    "Bauen",
+    "Drei Zeilen in der Schleife: eine Richtung mit <code>r()</code> wählen, nur weitergehen, wenn das neue Feld nicht am Rand liegt, und das Feld, auf dem der Walker steht, auf 0 setzen."
+   ],
+   [
+    "Prüfen",
+    "«Prüfen»: 4 von 4. Stellen Sie den Regler auf 200, 800 und 2000 Schritte und beobachten Sie, wie die Höhle wächst."
+   ],
+   [
+    "Brechen",
+    "Lassen Sie die Randprüfung weg und gehen Sie immer. Was meldet der Prüfstand, und was könnte im Spiel passieren?"
+   ],
+   [
+    "Erklären",
+    "Warum ist eine Random-Walk-Höhle immer zusammenhängend? Für welches Ziel ist das Verfahren deshalb die richtige Wahl?"
+   ]
+  ]
+ },
+ "4.4": {
+  "eb": "Aufgabe 4.4 · Folie «Zelluläre Automaten: jede Zelle passt sich ihren Nachbarn an» · LZ 1 und 2",
+  "goal": "<code>glaetten(karte)</code> wendet die Regel einmal auf das ganze Raster an und liefert ein neues Raster: Eine Zelle wird Wand, wenn 5 oder mehr ihrer 8 Nachbarn Wand sind, sonst Boden.",
+  "steps": [
+   [
+    "Vorhersagen",
+    "Eine Bodenzelle hat 6 Wände ringsum. Was wird aus ihr? Was wird aus einer Wandzelle mit 2 Wänden ringsum? Und aus einer einzelnen Wand mitten in einer grossen Bodenfläche?"
+   ],
+   [
+    "Bauen",
+    "Eine Kopie anlegen, mit zwei Schleifen über alle Zellen gehen, <code>waendeRingsum</code> im alten Raster zählen, die Regel in die Kopie schreiben, die Kopie zurückgeben."
+   ],
+   [
+    "Prüfen",
+    "«Prüfen»: 3 von 3. In der Szene vier- bis fünfmal «glätten» klicken: Aus Rauschen mit 55 Prozent Wänden werden Höhlen."
+   ],
+   [
+    "Brechen",
+    "Schreiben Sie das Ergebnis direkt in <code>karte</code> statt in die Kopie und geben Sie <code>karte</code> zurück. Welche Tests schlagen fehl, und wie verändert sich die Höhle?"
+   ],
+   [
+    "Erklären",
+    "Warum müssen alle Zellen gleichzeitig wechseln, also alle Nachbarn im alten Raster gezählt werden?"
+   ]
+  ]
+ },
+ "4.5": {
+  "eb": "Aufgabe 4.5 · Folien zum Thema Spielbarkeit · LZ 3",
+  "goal": "<code>spielbareKarte(startSeed)</code> probiert Seeds der Reihe nach und liefert die erste Höhle, deren Ziel erreichbar ist und deren Weg mindestens <code>MIN_WEG</code> = 40 Schritte lang ist.",
+  "steps": [
+   [
+    "Vorhersagen",
+    "Warum liefert <code>hoehle(seed)</code> manchmal Höhlen, in denen das Ziel nicht erreichbar ist, obwohl der zelluläre Automat aus 4.4 richtig arbeitet?"
+   ],
+   [
+    "Bauen",
+    "Eine Schleife über die Seeds von <code>startSeed</code> an, höchstens 1000 Versuche. Für jeden Seed: <code>hoehle(seed)</code>, dann mit <code>erreichbar</code> und <code>weglaenge</code> prüfen, die erste passende als <code>{karte, start, ziel, seed}</code> zurückgeben. Nach der Schleife <code>null</code>."
+   ],
+   [
+    "Prüfen",
+    "«Prüfen»: 4 von 4. In der Szene steht links, welche Seeds verworfen wurden und warum."
+   ],
+   [
+    "Brechen",
+    "Prüfen Sie nur die Erreichbarkeit, nicht die Weglänge. Welche Höhlen kommen jetzt durch, und warum ist «erreichbar» allein noch kein gutes Level?"
+   ],
+   [
+    "Erklären",
+    "Warum ist «erzeugen und prüfen» oft einfacher, als einen Generator zu bauen, der nur gute Höhlen liefert? Und warum bleibt das Ergebnis trotz der Schleife reproduzierbar?"
+   ]
+  ]
+ },
+ "4.6": {
+  "eb": "Aufgabe 4.6 · Folien «Eine Lösung als Liste: Genom und Population» und «Kreuzung kombiniert, Mutation erfindet» · LZ 4",
+  "goal": "<code>kreuzen(a, b, r)</code> und <code>mutieren(genom, rate, r)</code> erzeugen aus zwei Eltern ein Kind. Population (30), Fitness, Turnierselektion aus 3, Elitismus und die Mutationsrate von 5 Prozent sind vorgegeben, wie auf den Folien. Mit Ihren beiden Funktionen findet ein Punkt den Weg zum Ziel.",
+  "steps": [
+   [
+    "Vorhersagen",
+    "Eltern <code>a = [0, 0, 0, 0, 0, 0]</code> und <code>b = [1, 1, 1, 1, 1, 1]</code>, Schnittstelle 4. Wie sieht das Kind aus? Wie viele von 40 Genen ändert <code>mutieren</code> bei <code>rate = 0.05</code> im Mittel?"
+   ],
+   [
+    "Bauen",
+    "<code>kreuzen</code>: eine Schnittstelle zwischen 1 und 39 zufällig wählen, vorne die Gene von a, dahinter die von b. <code>mutieren</code>: eine neue Liste, in der jedes Gen mit Wahrscheinlichkeit <code>rate</code> durch eine zufällige Richtung 0 bis 3 ersetzt wird."
+   ],
+   [
+    "Prüfen",
+    "«Prüfen»: 7 von 7. In der Szene Generation für Generation zuschauen: Bei Fitness 2 ist das Ziel erreicht."
+   ],
+   [
+    "Brechen",
+    "Lassen Sie <code>mutieren</code> das Genom unverändert zurückgeben: <code>return genom.slice();</code>. Starten Sie die Szene neu. Was passiert nach einigen Generationen?"
+   ],
+   [
+    "Erklären",
+    "Ordnen Sie jedem Begriff etwas aus der Szene zu: Population, Genom, Fitness, Selektion, Kreuzung, Mutation."
+   ]
+  ]
+ },
+ "4.7": {
+  "eb": "Aufgabe 4.7 · Folien «Ein kleines neuronales Netz als Gehirn des Agenten» und «Ein Läufer lernt springen, ohne dass es ihm jemand zeigt» · LZ 5",
+  "goal": "<code>fitness(laeufer)</code> sagt der Evolution, was ein guter Läufer ist. Alles andere ist vorgegeben, wie auf den Folien: das kleine Netz mit 17 Gewichten (Abstand / 300 und Höhe / 70 als Eingänge, ein Bias, 4 versteckte Neuronen mit tanh, ein Ausgang), die Selektion und die Mutation, die jedes Gewicht mit 20 Prozent Wahrscheinlichkeit um eine kleine Zufallszahl verschiebt.",
+  "steps": [
+   [
+    "Vorhersagen",
+    "In Generation 1 sind alle 17 Gewichte zufällig. Was tun die meisten Läufer? Wie viele Hindernisse schafft der Beste vermutlich?"
+   ],
+   [
+    "Bauen",
+    "Eine Zeile: Die Fitness ist die zurückgelegte Strecke, <code>laeufer.strecke</code>."
+   ],
+   [
+    "Prüfen",
+    "«Prüfen»: 3 von 3. In der Szene steigen die Balken rechts oben, bis der Beste alle 30 Hindernisse schafft."
+   ],
+   [
+    "Brechen",
+    "Versuchen Sie nacheinander <code>return 0;</code> und <code>return -laeufer.spruenge;</code>, also eine Belohnung fürs Nichtspringen. Was lernen die Läufer jeweils?"
+   ],
+   [
+    "Erklären",
+    "Niemand hat dem Netz gesagt, wann es springen soll. Woher kommt das Verhalten? Und warum ist das kein Training mit Beispielen, wie Sie es aus dem maschinellen Lernen kennen?"
+   ]
+  ]
+ }
+};
+
+// ── Ablauf ──────────────────────────────────────────────────────────────
+const ORDER = ['4.1', '4.2', '4.3', '4.4', '4.5', '4.6', '4.7'];
+let cur = null, last = performance.now();
+const nav = document.getElementById('nav');
+ORDER.forEach(k => { const b = document.createElement('button'); b.textContent = S[k].title.split(' · ')[0] + ' ' + S[k].title.split(' · ')[1]; b.onclick = () => select(k); b.id = 'b' + k; nav.appendChild(b); });
+function runTests(k){ return S[k].tests().map(([n, f]) => { try { const [ok, why] = f(); return {n, ok: !!ok, why}; } catch (e) { return {n, ok: false, why: 'Ihr Code hat einen Fehler geworfen: ' + e.message}; } }); }
+function select(k){
+  cur = k; location.hash = k;
+  ORDER.forEach(o => document.getElementById('b' + o).classList.toggle('on', o === k));
+  const g = GUIDE[k];
+  document.getElementById('eyebrow').textContent = g.eb;
+  document.getElementById('sceneTitle').textContent = S[k].title.split(' · ')[1];
+  document.getElementById('sceneGoal').innerHTML = g.goal;
+  document.getElementById('steps').innerHTML = g.steps.map(st => '<li><b>' + st[0] + '</b>' + st[1] + '</li>').join('');
+  document.getElementById('info').innerHTML = '<b>Bedienung:</b> ' + S[k].text;
+  const ix = ORDER.indexOf(k);
+  document.getElementById('prev').disabled = ix === 0; document.getElementById('next').disabled = ix === ORDER.length - 1;
+  live = {t: 99, pass: 0, total: 0};
+  ctl('');
+  document.getElementById('results').innerHTML = '';
+  S[k].err = '';
+  try { S[k].init(); } catch (e) { S[k].err = e.message; }
+}
+document.getElementById('prev').onclick = () => { const i = ORDER.indexOf(cur); if (i > 0) select(ORDER[i - 1]); };
+document.getElementById('next').onclick = () => { const i = ORDER.indexOf(cur); if (i < ORDER.length - 1) select(ORDER[i + 1]); };
+// Live-Anzeige: die Prüfungen laufen still im Hintergrund
+let live = {t: 99, pass: 0, total: 0};
+function liveCheck(dt){ live.t += dt; if (live.t < 0.8) return; live.t = 0; const l = runTests(cur); live.pass = l.filter(x => x.ok).length; live.total = l.length; }
+function drawLive(){
+  const all = live.total && live.pass === live.total, s = 'Ihr Code: ' + live.pass + ' von ' + live.total + ' Prüfungen';
+  ctx.font = '700 13px system-ui, sans-serif'; const w = ctx.measureText(s).width + 20;
+  ctx.fillStyle = all ? '#166534' : '#c8102e'; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(W - w - 8, H - 32, w, 24, 12) : ctx.rect(W - w - 8, H - 32, w, 24); ctx.fill();
+  txt(s, W - w / 2 - 8, H - 20, {align: 'center', color: '#fff', size: 13, weight: 700});
+}
+document.getElementById('check').onclick = () => {
+  const box = document.getElementById('results'); box.innerHTML = '';
+  const list = runTests(cur), passed = list.filter(t => t.ok).length;
+  const head = document.createElement('div'); head.className = passed === list.length ? 'ok' : 'no';
+  head.innerHTML = '<b>' + passed + ' von ' + list.length + ' Prüfungen bestanden</b>'; box.appendChild(head);
+  list.forEach(t => { const d = document.createElement('details'); d.className = t.ok ? 'ok' : 'no'; d.open = !t.ok;
+    d.innerHTML = '<summary>' + (t.ok ? '✓ ' : '✗ ') + t.n + '</summary><span class="why">' + t.why + '</span>'; box.appendChild(d); });
+};
+// Gesamtübersicht für alle Aufgaben (oben)
+function gesamt(){ let p = 0, n = 0; const teile = ORDER.map(k => { const l = runTests(k), a = l.filter(t => t.ok).length; p += a; n += l.length; return k + ': ' + a + '/' + l.length; }); document.getElementById('summe').textContent = p + ' von ' + n + ' Prüfungen bestanden · ' + teile.join(' · '); }
+function frame(now){
+  const dt = Math.max(0, Math.min(0.05, (now - last) / 1000)); last = now;
+  const s = S[cur];
+  ctx.clearRect(0, 0, W, H);
+  try { if (!s.err) s.step(dt); } catch (e) { s.err = e.message; }
+  try { s.draw(); } catch (e) { s.err = s.err || e.message; }
+  liveCheck(dt); drawLive();
+  if (s.err) { ctx.fillStyle = 'rgba(253,241,242,.95)'; ctx.fillRect(10, H - 76, W - 20, 36); txt('Fehler in Ihrem Code: ' + s.err, 20, H - 58, {color: COL.red, size: 13}); }
+  requestAnimationFrame(frame);
+}
+select(ORDER.includes(location.hash.slice(1)) ? location.hash.slice(1) : '4.1');
+gesamt();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

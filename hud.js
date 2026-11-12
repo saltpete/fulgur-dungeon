@@ -1,16 +1,42 @@
 // =====================================================
 // hud.js - Anzeige über dem Spielfeld
 // =====================================================
-// Liest nur Zustand und zeichnet ihn, keine Änderungen am Zustand.
+// Liest nur den Spielzustand und zeichnet ihn. Nur das Banner zählt seine eigene Anzeigezeit.
 
-let banner = null;   // { text, t }
+const BANNER_TIME = 1;     // so lange bleibt das Banner stehen, in Sekunden
+const BANNER_FADE = 0.4;   // in den letzten 0.4 s blendet es aus
+
+let banner = null;   // { text, t }: t = restliche Anzeigezeit
 function showBanner(text) {
-  banner = { text, t: 2 };
+  banner = { text, t: BANNER_TIME };
+}
+
+// Jedes Bild mit der echten Framezeit, wie updateShake und updateParticles
+function updateBanner(dt) {
+  if (!banner) return;
+  banner.t -= dt;
+  if (banner.t <= 0) banner = null;   // abgelaufen: weg
+}
+
+// Grosser Schriftzug oben in der Mitte, blendet am Ende aus
+function drawBanner() {
+  if (!banner) return;
+  ctx.save();                                                // Schrift, Kontur und Alpha danach wieder zurück
+  ctx.globalAlpha = Math.min(1, banner.t / BANNER_FADE);     // 1 solange genug Zeit, dann auf 0
+  ctx.textAlign = 'center';
+  ctx.font = 'bold 40px sans-serif';
+  ctx.lineJoin = 'round';
+  ctx.lineWidth = 5;
+  ctx.strokeStyle = PALETTE.k;                               // dunkle Kontur, auf jedem Boden lesbar
+  ctx.strokeText(banner.text, W / 2, H / 3);
+  ctx.fillStyle = '#f4efe6';
+  ctx.fillText(banner.text, W / 2, H / 3);
+  ctx.restore();
 }
 
 
 // Trefferpunkte als Herzen oben links
-function drawHud(dt) {
+function drawHud() {
     for (let i = 0; i < player.maxHp; i++) {
         const art = i < player.hp ? PIX.heart : PIX.heartEmpty;
         drawPixel(ctx, art, 10 + i * 24, 10);
@@ -29,6 +55,9 @@ function drawHud(dt) {
     
     // TODO: Zusätzliche Fähigkeiten automatisch hinzufügen lassen
     drawCooldown('F BLITZ', player.boltReady ?? 1, W - 86, 36);
+
+    // Banner beim Betreten einer Ebene
+    drawBanner();
 
     // Durchlauf vorbei (FA-3-3, FA-3-4)
     if (game.state === 'dead') {
