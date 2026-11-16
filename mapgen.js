@@ -25,7 +25,7 @@ const BOSS_WALL_CHANCE = 0.35;   // Bossebene: weniger Wand, mehr Boden
 function fillRandom(rng, wallChance) {
   for (let y = 0; y < ROWS; y++) {
     for (let x = 0; x < COLS; x++) {
-      if (x < 2 || y < 2 || x >= COLS - 2 || y >= ROWS - 2) map[y][x] = 1;   // Rand 2 Kacheln dick: HUD und wallTile
+      if (x < 2 || y < 2 || x >= COLS - 2 || y >= ROWS - 2) map[y][x] = 1;   // Rand 2 Kacheln dick: HUD und wallRow
       else map[y][x] = rng() < wallChance ? 1 : 0;                         // sonst Zufall: Wand oder Boden
     }
   }
@@ -114,7 +114,7 @@ const MIN_STEPS = 11;     // Gegner starten mindestens 11 Schritte vom Held entf
 const CRATE_COUNT = 3;    // Anzahl Kisten, später entscheidet der Director (Block 5)
 
 // Gegner mit Budget (PVA 4.2): Je tiefer die Ebene, desto grösser das Budget, desto mehr Gegner
-const ENEMIES = [{ kind: 'slime', cost: 2 }, { kind: 'orc', cost: 3 }];
+const ENEMIES = [{ kind: 'slime', cost: 2 }, { kind: 'orc', cost: 3 }, { kind: 'slime2', cost: 1 }, { kind: 'orc2', cost: 1 }, { kind: 'slime3', cost: 1 }];
 
 function enemyWave(depth, rng) {
   let budget = Math.min(4 + depth, 20);   // höchstens 20, sonst wird die Karte zu voll

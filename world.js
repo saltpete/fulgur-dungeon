@@ -122,6 +122,8 @@ function makeCoin(col, row) {
   return o;
 }
 
+// TODO: makeHeart
+
 // Treppe: Zone über der Treppenkachel. Beim Berühren geht es eine Ebene tiefer.
 // Nur ein Merker: buildLevel darf nicht mitten in der Schleife über objects laufen.
 function makeStairs(col, row) {

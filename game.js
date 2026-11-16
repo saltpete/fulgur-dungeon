@@ -16,9 +16,6 @@
 // hud.js      Herzen, Münzen, Abklingzeiten, Banner
 // effects.js  Partikel
 // sprites.js  Pixelgrafiken
-
-// Grundregel: Jede Zeile, die Ihr KI-Assistent schreibt, muessen
-// Sie erklaeren koennen.
 // ============================================================
 
 const canvas = document.getElementById('game');
@@ -55,7 +52,11 @@ heroIdle.src = 'assets/Swordsman_lvl1_Idle_with_shadow.png';      // craftpix.ne
 const heroAttack = new Image();
 heroAttack.src = 'assets/Swordsman_lvl1_attack_with_shadow.png'   // craftpix.net (License: Free for personal and commercial use, with credit to craftpix.net)
 
-// Gegner
+// ===========================================================
+// Alle Gegner
+// ===========================================================
+
+// Ork
 const enemyWalk = new Image();
 enemyWalk.src   = 'assets/orc1_walk_with_shadow.png';             // craftpix.net (License: Free for personal and commercial use, with credit to craftpix.net)
 const enemyIdle= new Image();
@@ -63,11 +64,33 @@ enemyIdle.src = 'assets/orc1_idle_with_shadow.png';               // craftpix.ne
 const enemyAttack = new Image();
 enemyAttack.src = 'assets/orc1_attack_with_shadow.png'            // craftpix.net (License: Free for personal and commercial use, with credit to craftpix.net)
 
+// Ork 2
+const enemy2Walk = new Image();
+enemy2Walk.src   = 'assets/orc2_walk_with_shadow.png';             // craftpix.net (License: Free for personal and commercial use, with credit to craftpix.net)
+const enemy2Idle= new Image();
+enemy2Idle.src = 'assets/orc2_idle_with_shadow.png';               // craftpix.net (License: Free for personal and commercial use, with credit to craftpix.net)
+const enemy2Attack = new Image();
+enemy2Attack.src = 'assets/orc2_attack_with_shadow.png'            // craftpix.net (License: Free for personal and commercial use, with credit to craftpix.net)
+
+// Ork
+
 // Schleim
 const slimeWalk = new Image();
-slimeWalk.src = 'assets/Slime2_Walk_with_shadow.png';              // craftpix.net (License: Free for personal and commercial use, with credit to craftpix.net)
+slimeWalk.src = 'assets/Slime1_Walk_with_shadow.png';              // craftpix.net (License: Free for personal and commercial use, with credit to craftpix.net)
 const slimeIdle = new Image();
-slimeIdle.src = 'assets/Slime2_Idle_with_shadow.png';              // craftpix.net (License: Free for personal and commercial use, with credit to craftpix.net)
+slimeIdle.src = 'assets/Slime1_Idle_with_shadow.png';              // craftpix.net (License: Free for personal and commercial use, with credit to craftpix.net)
+
+// Schleim 2
+const slime2Walk = new Image();
+slime2Walk.src = 'assets/Slime2_Walk_with_shadow.png';              // craftpix.net (License: Free for personal and commercial use, with credit to craftpix.net)
+const slime2Idle = new Image();
+slime2Idle.src = 'assets/Slime2_Idle_with_shadow.png';              // craftpix.net (License: Free for personal and commercial use, with credit to craftpix.net)
+
+// Schleim 3
+const slime3Walk = new Image();
+slime3Walk.src = 'assets/Slime3_Walk_with_shadow.png';              // craftpix.net (License: Free for personal and commercial use, with credit to craftpix.net)
+const slime3Idle = new Image();
+slime3Idle.src = 'assets/Slime3_Idle_with_shadow.png';              // craftpix.net (License: Free for personal and commercial use, with credit to craftpix.net)
 
 // Sprites
 //Held
@@ -84,9 +107,31 @@ const ENEMY_SPRITE = {
   rows: { down: 0, up: 1, left: 2, right: 3 }   // Ork-Sheet ist anders sortiert
 };
 
+//Ork 2
+const ENEMY2_SPRITE = {
+  walk: enemy2Walk, idle: enemy2Idle, attack: enemy2Attack,
+  walkFrames: ENEMY_WALK_FRAMES, idleFrames: ENEMY_IDLE_FRAMES, attackFrames: 8,
+  rows: { down: 0, up: 1, left: 2, right: 3 }   // Ork-Sheet ist anders sortiert
+};
+
 //Schleim
 const SLIME_SPRITE = {
   walk: slimeWalk, idle: slimeIdle,
+  walkFrames: 8, idleFrames: [6, 6, 6, 6],
+  rows: { down: 0, up: 1, left: 2, right: 3 },   // gleiche Reihenfolge wie beim Ork
+  foot: 0.656                                    // Füsse in Zeile 42 von 64, höher als bei Held und Ork
+};
+//Schleim 2
+const SLIME2_SPRITE = {
+  walk: slime2Walk, idle: slime2Idle,
+  walkFrames: 8, idleFrames: [6, 6, 6, 6],
+  rows: { down: 0, up: 1, left: 2, right: 3 },   // gleiche Reihenfolge wie beim Ork
+  foot: 0.656                                    // Füsse in Zeile 42 von 64, höher als bei Held und Ork
+};
+
+//Schleim 3
+const SLIME3_SPRITE = {
+  walk: slime3Walk, idle: slime3Idle,
   walkFrames: 8, idleFrames: [6, 6, 6, 6],
   rows: { down: 0, up: 1, left: 2, right: 3 },   // gleiche Reihenfolge wie beim Ork
   foot: 0.656                                    // Füsse in Zeile 42 von 64, höher als bei Held und Ork
@@ -140,22 +185,25 @@ function isWall(x, y){
 }
 
 // Waehlt aus dem 3x5-Wandblock im Tileset (Spalten 0-2, Zeilen 0-4).
-// Waagrecht: welche Seite ist frei. Senkrecht: wie tief sitzt die Zelle im Block.
-function wallTile(x, y){
-  const sx = !isWall(x-1, y) ? 0 : (!isWall(x+1, y) ? 2 : 1);
-  let sy;
-  if      (!isWall(x, y+1)) sy = 4;   // Front, Unterkante des Blocks
-  else if (!isWall(x, y+2)) sy = 2;   // helle Abschlusskante
-  else if (!isWall(x, y-1)) sy = 0;   // Oberkante des Blocks
-  else                      sy = 1;   // dunkles Inneres
-  return [sx, sy];
+// Eine ganze Kachel aus dem Tileset zeichnen. t = [Spalte, Reihe] im Tileset
+function drawTile(t, x, y) {
+  ctx.drawImage(tiles, t[0] * TSRC, t[1] * TSRC, TSRC, TSRC, x * TILE, y * TILE, TILE, TILE);
 }
 
-// Jedes Feld bekommt immer dieselbe Variante.
-// Math.random() waere hier falsch: die Kachel wuerde in jedem Frame neu
-// gewuerfelt und das Bild flackern. Stattdessen rechnen wir aus x und y
-// eine Zahl aus, die fuer dasselbe Feld immer gleich ist, und nehmen
-// davon den Rest durch die Anzahl Varianten.
+// Eine halbe Kachel zeichnen: half = 0 für links, 8 für rechts (in Pixeln im Tileset)
+function drawHalf(col, row, x, y, half) {
+  ctx.drawImage(tiles, col * TSRC + half, row * TSRC, TSRC / 2, TSRC,
+                x * TILE + half * SCALE, y * TILE, TILE / 2, TILE);
+}
+
+// Welche Reihe aus dem 3x5-Wandblock im Tileset (Spalten 0 bis 2, Reihen 0 bis 4).
+// Die Mauer ist zwei Kacheln hoch: unten die Ziegel, darüber die helle Oberkante.
+function wallRow(x, y) {
+  if (!isWall(x, y + 1)) return 4;   // darunter Boden: Ziegel mit Unterkante
+  if (!isWall(x, y + 2)) return 2;   // zwei darunter Boden: helle Oberkante der Mauer
+  if (!isWall(x, y - 1)) return 0;   // darüber Boden: Rand oben
+  return 1;                          // sonst: dunkle Oberseite
+}
 
 function floorTile(x, y){
   const mixed = x * 7919 + y * 104729;    // zwei Primzahlen, damit sich
@@ -163,17 +211,39 @@ function floorTile(x, y){
 }
 
 function drawMap(){
-  for(let y = 0; y < ROWS; y++){
-    for(let x = 0; x < COLS; x++){
-      const v = map[y][x];  // 0 Boden, 1 Wand, 2 Treppe
-      const t = v === 1 ? wallTile(x, y)
-              : v === 0 ? floorTile(x, y)
-              : TILESET[v];
-      if(!t) continue;
-      ctx.drawImage(tiles, t[0]*TSRC, t[1]*TSRC, TSRC, TSRC, x*TILE, y*TILE, TILE, TILE);
+  // 1. Boden überall, auch unter den Wänden. Die Wandkacheln haben durchsichtige Ränder
+  //    mit weichem Schatten, dort soll Boden durchscheinen statt Schwarz.
+  for (let y = 0; y < ROWS; y++) {
+    for (let x = 0; x < COLS; x++) {
+      drawTile(floorTile(x, y), x, y);
+      if (map[y][x] === 2) drawTile(TILESET[2], x, y);   // Treppe liegt auf dem Boden
     }
   }
-};
+
+  // 2. Wände in zwei Hälften: Die linke bekommt einen Rand, wenn links Boden ist,
+  //    die rechte, wenn rechts Boden ist. Die Reihe sagt, ob oben, Mauer oder dunkel.
+  for (let y = 0; y < ROWS; y++) {
+    for (let x = 0; x < COLS; x++) {
+      if (!isWall(x, y)) continue;
+      const row = wallRow(x, y);
+      drawHalf(isWall(x - 1, y) ? 1 : 0, row, x, y, 0);   // linke Hälfte
+      drawHalf(isWall(x + 1, y) ? 1 : 2, row, x, y, 8);   // rechte Hälfte
+    }
+  }
+
+  // 3. Weicher Schatten auf dem Boden direkt unter einer Mauer
+  for (let y = 0; y < ROWS; y++) {
+    for (let x = 0; x < COLS; x++) {
+      if (isWall(x, y) || !isWall(x, y - 1)) continue;   // nur Boden mit Wand darüber
+      const g = ctx.createLinearGradient(0, y * TILE, 0, y * TILE + 14);
+      g.addColorStop(0, 'rgba(10, 8, 25, 0.45)');        // oben dunkel
+      g.addColorStop(1, 'rgba(10, 8, 25, 0)');           // nach 14 px weg
+      ctx.fillStyle = g;
+      ctx.fillRect(x * TILE, y * TILE, TILE, 14);
+    }
+  }
+
+}
 
 // ============================================================
 // Screen shake
@@ -289,27 +359,33 @@ let accumulator = 0; // Eimer
 
 // ---- Overlay--------------------
 function drawOverlay(alpha) {
-  const left = [
-    `FPS: ${fps.toFixed(0)}   DT: ${lastDt.toFixed(4)}`,
-    `Alpha: ${alpha.toFixed(3)}`,
-    `Player Position: Row ${player.row}, Col ${player.col}`,
-  ]
-  ctx.fillStyle = 'rgba(12, 14, 20, 0.7)';
-  ctx.fillRect(0, H - 62, W, 62);
-  ctx.font = '11px sans-serif';
-  ctx.textAlign = 'left';
-  ctx.fillStyle = '#fcf7f7'; // Weiss für Text
-  left.forEach((t, i) => ctx.fillText(t, 12, H - 46 + i * 14));
+  overlayBox([
+    `FPS ${fps.toFixed(0)} · DT ${lastDt.toFixed(4)} · Alpha ${alpha.toFixed(2)}`,
+    `Held: Reihe ${player.row}, Spalte ${player.col} · Seed ${game.seed}`,
+  ], 'left');
 
   const orc = objects.find(o => o.kind === 'orc');
   if (orc) {
-    ctx.textAlign = 'right';
-    ctx.fillText(`Ork: ${STATE_NAMES[orc.state]} · Leben ${orc.hp}/${orc.maxHp}`, W - 12, H - 46);
     const p = perceive(orc);
-    ctx.fillText(`Abstand ${Math.round(p.dist)} px · daneben: ${p.adjacent ? 'ja' : 'nein'} · sieht: ${p.sees ? 'ja' : 'nein'}`, W - 12, H - 32);
-    ctx.textAlign = 'left';
+    overlayBox([
+      `Ork: ${STATE_NAMES[orc.state]} · Leben ${orc.hp}/${orc.maxHp}`,
+      `Abstand ${Math.round(p.dist)} px · daneben: ${p.adjacent ? 'ja' : 'nein'} · sieht: ${p.sees ? 'ja' : 'nein'}`,
+    ], 'right');
   }
+}
 
+// Kleiner Kasten unten links oder rechts, nur so gross wie sein Text
+function overlayBox(lines, side) {
+  ctx.font = '10px sans-serif';
+  ctx.textAlign = 'left';
+  const w = Math.max(...lines.map(l => ctx.measureText(l).width)) + 12;
+  const h = lines.length * 12 + 6;
+  const x = side === 'left' ? 6 : W - w - 6;
+  const y = H - h - 6;
+  ctx.fillStyle = 'rgba(12, 14, 20, 0.55)';
+  ctx.fillRect(x, y, w, h);
+  ctx.fillStyle = '#fcf7f7';
+  lines.forEach((l, i) => ctx.fillText(l, x + 6, y + 13 + i * 12));
 }
 
 
