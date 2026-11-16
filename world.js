@@ -135,43 +135,37 @@ function makeStairs(col, row) {
   return o;
 }
 
-// Ork: Gegner mit Verfolgen und Angreifen, gebaut wie der Schleim
-function makeOrc(col, row) {
-  const o = new Entity(col, row, ENEMY_SPRITE)
-    .add(new GridMovement())                     // Schreibt x,y
-    .add(new Health())                           // Ork kann Schaden nehmen
-    .add(new EnemyBrain(decide, {
-      patrol: new Patrol(0.45),                  // zufällig herumlaufen, 1 Schritt alle 0.45 Sekunden
-      chase: new Chase(0.3),                     // auf der Jagd schneller, 1 Schritt alle 0.3 Sekunden
-      attack: new MeleeAttack(1.2, 0.45, 1),     // 1.2 s pro Schlag, trifft nach 0.45 s, 1 Herz
-    }));
-  o.kind = 'orc';                                // damit das HUD weiss, dass es ein Ork ist
-  o.state = 'patrol';                            // Startzustand
-  o.solid = true;
-  o.hitFx = BLOOD;
-  o.maxHp = 3;                                   // hält 3 Treffer aus
-  o.hp = o.maxHp;
-  o.loot = true;                                 // hinterlässt eine Münze
-  return o;
-}
+// ---------- Gegner ----------
+// Alle Gegner in einer Tabelle: Aussehen, Verhalten und Werte. Ein neuer Gegner ist eine neue Zeile.
+// brain 'hunt': patrouillieren, verfolgen, angreifen. brain 'flee': patrouillieren, fliehen.
+// cost: Preis im Gegnerbudget (mapgen.js). Zeiten in Sekunden, hit = Herzen pro Schlag.
+// TODO: Bossgegner alle 5 Level dafür auch neue Liste (BOSS_TYPES) und makeBoss, die dann auch eine eigene Grafik haben. 
+const ENEMY_TYPES = {
+  slime:  { sprite: SLIME_SPRITE,  brain: 'flee', cost: 2, hp: 2, patrol: 0.6,  flee: 0.3,  goo: true, barY: -20 },
+  slime2: { sprite: SLIME2_SPRITE, brain: 'flee', cost: 3, hp: 3, patrol: 0.5,  flee: 0.25, goo: true, barY: -20 },
+  slime3: { sprite: SLIME3_SPRITE, brain: 'hunt', cost: 4, hp: 3, patrol: 0.6,  chase: 0.35, swing: 1.2, hitAt: 0.5,  hit: 1, goo: true, barY: -20 },
+  orc:    { sprite: ENEMY_SPRITE,  brain: 'hunt', cost: 3, hp: 3, patrol: 0.45, chase: 0.3,  swing: 1.2, hitAt: 0.45, hit: 1 },
+  orc2:   { sprite: ENEMY2_SPRITE, brain: 'hunt', cost: 5, hp: 5, patrol: 0.45, chase: 0.25, swing: 1.0, hitAt: 0.4,  hit: 1 },
+};
 
-// Schleim: zweiter Gegnertyp aus denselben Bausteinen wie der Ork, ohne neue Klasse
-function makeSlime(col, row) {
-  const o = new Entity(col, row, SLIME_SPRITE)
-    .add(new EnemyBrain(fleeDecision(4 * TILE, 6 * TILE), {           // entscheidet: patrol oder flee
-      patrol: new Patrol(0.6),                                        // Baustein für patrol
-      flee: new Flee(0.3),                                            // Baustein für flee
-    }))
+// Baut einen Gegner aus seiner Tabellenzeile, immer aus denselben Bausteinen
+function makeEnemy(kind, col, row) {
+  const t = ENEMY_TYPES[kind];
+  const brain = t.brain === 'hunt'
+    ? new EnemyBrain(decide, { patrol: new Patrol(t.patrol), chase: new Chase(t.chase), attack: new MeleeAttack(t.swing, t.hitAt, t.hit) })
+    : new EnemyBrain(fleeDecision(4 * TILE, 6 * TILE), { patrol: new Patrol(t.patrol), flee: new Flee(t.flee) });
+  const o = new Entity(col, row, t.sprite)
     .add(new GridMovement())
-    .add(new Health());
-  o.kind = 'slime';
-  o.state = 'patrol';
+    .add(new Health())
+    .add(brain);
+  o.kind = kind;
+  o.state = 'patrol';                      // Startzustand
   o.solid = true;
-  o.maxHp = 2;                                    // hält 2 Treffer aus
-  o.hp = o.maxHp;
-  o.loot = true;                                  // hinterlässt eine Münze
-  o.hitFx = GOO;                                  // hellblaue Tropfen beim Treffer
-  o.barY = -20;                                   // Lebensbalken tiefer, er ist kleiner als der Ork
+  o.maxHp = t.hp;
+  o.hp = t.hp;
+  o.loot = true;                           // hinterlässt eine Münze
+  o.hitFx = t.goo ? GOO : BLOOD;           // Teilchen beim Treffer
+  o.barY = t.barY;                         // Höhe des Lebensbalkens, ohne Angabe Standard
   return o;
 }
 
@@ -216,10 +210,7 @@ function buildLevel(depth) {
   objects.push(player);
   
   // Gegner: so viele, wie in L.enemies stehen (Ebene 1 fest, ab Ebene 2 aus dem Budget)
-  for (const e of L.enemies) {
-    if (e.kind === 'orc')   objects.push(makeOrc(e.col, e.row));
-    if (e.kind === 'slime') objects.push(makeSlime(e.col, e.row));
-  }
+  for (const e of L.enemies) objects.push(makeEnemy(e.kind, e.col, e.row));
 
   for (const [c, r] of L.crates) objects.push(makeCrate(c, r));
   

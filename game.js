@@ -529,7 +529,7 @@ class Entity {
     let frame = this.animFrame;
 
     // Hieb
-    if (this.attackAnim > 0) {
+    if (this.attackAnim > 0 && this.sprite.attack) {   // nur mit Angriffs-Sheet, der Schleim hat keines {
       sheet = this.sprite.attack;
       frame = Math.min(this.sprite.attackFrames-1, Math.floor (this.attackAnim * this.sprite.attackFrames))
     }

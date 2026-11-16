@@ -114,17 +114,17 @@ const MIN_STEPS = 11;     // Gegner starten mindestens 11 Schritte vom Held entf
 const CRATE_COUNT = 3;    // Anzahl Kisten, später entscheidet der Director (Block 5)
 
 // Gegner mit Budget (PVA 4.2): Je tiefer die Ebene, desto grösser das Budget, desto mehr Gegner
-const ENEMIES = [{ kind: 'slime', cost: 2 }, { kind: 'orc', cost: 3 }, { kind: 'slime2', cost: 1 }, { kind: 'orc2', cost: 1 }, { kind: 'slime3', cost: 1 }];
+// Die Gegnerarten und ihre Preise stehen in ENEMY_TYPES (world.js)
 
 function enemyWave(depth, rng) {
   let budget = Math.min(4 + depth, 20);   // höchstens 20, sonst wird die Karte zu voll
   const list = [];
   while (true) {
-    const fitting = ENEMIES.filter(e => e.cost <= budget);   // wer passt noch ins Restbudget?
+    const fitting = Object.keys(ENEMY_TYPES).filter(k => ENEMY_TYPES[k].cost <= budget);   // wer passt noch ins Restbudget?
     if (fitting.length === 0) break;                         // keiner mehr: Welle fertig
-    const enemy = fitting[Math.floor(rng() * fitting.length)];
-    list.push(enemy.kind);
-    budget -= enemy.cost;
+    const kind = fitting[Math.floor(rng() * fitting.length)];
+    list.push(kind);
+    budget -= ENEMY_TYPES[kind].cost;
   }
   return list;
 }
@@ -170,17 +170,10 @@ function generateLevel(seed, depth) {
   return { hero, stairs, enemies, crates };
 }
 
-// Wegpunkte auf einer geraden freien Linie in der Reihe
-function patrolLine(x, y) {
-  let left = x, right = x;
-  while (left > x - PATROL_REACH && !isWall(left - 1, y)) left--;
-  while (right < x + PATROL_REACH && !isWall(right + 1, y)) right++;
-  return [[left, y], [right, y]];
-}
-
-// Welt benutzen. 
+// Welt benutzen.
 
 // Ebene 1 bleibt die Handkarte. Nach einem Tod muss sie zurück in map.
+// TODO: Seedstart einbauen, dafür jedoch Seedeingabe im Menü, sonst ist es nicht reproduzierbar
 function useLevel1() {
   for (let y = 0; y < ROWS; y++) map[y] = LEVEL1_MAP[y].slice();
   return LEVEL;

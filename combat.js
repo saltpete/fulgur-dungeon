@@ -17,6 +17,7 @@ class Health {
 function damage(t, amount, dcol = 0, drow = 0) {
   if (t.hp <= 0 || t.invuln > 0) return false;   // schon bei 0 oder gerade geschützt
   t.hp = Math.max(0, t.hp - amount);
+  t.wasHit = true;                                // der Gegner merkt das beim Wahrnehmen
   t.angry = true;                                 // einmal getroffen: verfolgt den Helden ab jetzt überallhin //TODO: Timer für "angry" einbauen, sonst bleibt der Gegner ewig aggressiv
   burst(t.x + TILE / 2, t.y + TILE / 2, t.hitFx || SPARKS);  // Teilchen je nach Ziel, nur Darstellung
   if (t === player) t.hurts = (t.hurts || 0) + 1; // Screenshake wenn der Held getroffen wird
