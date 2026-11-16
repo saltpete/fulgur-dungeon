@@ -20,6 +20,7 @@ function perceive(e) {
     adjacent: Math.abs(player.col - e.col) + Math.abs(player.row - e.row) === 1,   // direkt daneben
     sees: dist <= VIEW_RANGE && inView && hasLineOfSight(e, player),   // nah, im Blickfeld, keine Wand dazwischen
     wasHit: !!e.wasHit,                   // seit dem letzten Schritt getroffen?
+    angry: !!e.angry,                     // schon einmal getroffen worden?
     swinging: !!e.swinging,               // mitten in einem Schlag?
   };
 }
@@ -50,7 +51,7 @@ function decide(state, p) {
   }
   if (state === 'chase') {
     if (p.adjacent) return 'attack';
-    if (p.dist > LOSE_RANGE) return 'patrol';
+    if (p.dist > LOSE_RANGE && !p.angry) return 'patrol';   // ein wütender Ork gibt nicht auf
     return 'chase';
   }
   if (state === 'attack') {
@@ -74,6 +75,24 @@ function stepToward(e, col, row) {
     if (tryMove(e, dc, dr)) return;
   }
 }
+
+
+// Wegsuche (Pfadfindung): Breitensuche ab dem Helden, dieselbe floodFill wie in mapgen.js.
+// Danach kennt jedes Feld seine Schritte bis zum Helden. Der Gegner geht auf ein
+// Nachbarfeld, das einen Schritt näher liegt. Kisten gelten als Hindernis.
+function stepOnPath(e) {
+  const blocked = (x, y) => isWall(x, y) || objects.some(o => o.pushable && o.col === x && o.row === y);
+  const { steps } = floodFill(player.col, player.row, blocked);
+  const here = steps[e.row][e.col];
+  if (here === -1) return stepToward(e, player.col, player.row);   // kein Weg bekannt: direkt drauflos wie bisher
+  for (const [dir, [dc, dr]] of Object.entries(DIRV)) {
+    const c = e.col + dc, r = e.row + dr;
+    if (isWall(c, r) || steps[r][c] !== here - 1) continue;        // nur Felder, die einen Schritt näher liegen
+    e.facing = dir;
+    if (tryMove(e, dc, dr)) return;                                // besetzt: nächste Richtung versuchen
+  }
+}
+
 
 // Die vier Richtungen aus DIRV, für die zufällige Wahl
 const DIRS = ['up', 'down', 'left', 'right'];
@@ -105,7 +124,7 @@ class Chase {
     this.timer -= dt;
     if (this.timer > 0) return;
     this.timer = this.interval;
-    stepToward(e, player.col, player.row);
+    stepOnPath(e);
   }
 }
 

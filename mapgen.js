@@ -50,7 +50,8 @@ function smooth45() {
 
 // Breitensuche ab (sx, sy). steps[y][x] = Schritte ab dem Start, -1 heisst nicht erreichbar.
 // cells = alle erreichten Felder, sortiert nach Abstand. Das letzte ist das weiteste.
-function floodFill(sx, sy) {
+
+function floodFill(sx, sy, blocked = isWall) {   // blocked: was als Hindernis gilt, Standard nur Wände
   const steps = map.map(row => row.map(() => -1));
   const cells = [[sx, sy]];
   steps[sy][sx] = 0;
@@ -58,7 +59,7 @@ function floodFill(sx, sy) {
     const [x, y] = cells[i];
     for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {   // 4 Nachbarn: der Held läuft nicht diagonal
       const nextX = x + dx, nextY = y + dy;
-      if (!isWall(nextX, nextY) && steps[nextY][nextX] === -1) {
+      if (!blocked(nextX, nextY) && steps[nextY][nextX] === -1) {
         steps[nextY][nextX] = steps[y][x] + 1;
         cells.push([nextX, nextY]);
       }
@@ -116,7 +117,7 @@ const CRATE_COUNT = 3;    // Anzahl Kisten, später entscheidet der Director (Bl
 const ENEMIES = [{ kind: 'slime', cost: 2 }, { kind: 'orc', cost: 3 }];
 
 function enemyWave(depth, rng) {
-  let budget = 4 + depth;
+  let budget = Math.min(4 + depth, 20);   // höchstens 20, sonst wird die Karte zu voll
   const list = [];
   while (true) {
     const fitting = ENEMIES.filter(e => e.cost <= budget);   // wer passt noch ins Restbudget?
