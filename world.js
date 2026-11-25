@@ -8,8 +8,8 @@ const objects = [];
 
 let player = null;   // Held wird bei jedem Level neu erzeugt
 
-// Spielzustand: 'play' oder 'dead'. Ohne diese Zeile wäre game dein Canvas (id="game").
-const game = { state: 'play', coins: 0, depth: 1 };   // Münzen überleben den Tod
+// Spielzustand: 'menu', 'play', 'pause' oder 'dead'. Ohne diese Zeile wäre game dein Canvas (id="game").
+const game = { state: 'menu', coins: 0, depth: 1 };   // Münzen überleben den Tod
 
 // Aufbau der Ebene: Spalte und Reihe jedes Objekts
 const LEVEL = {
@@ -179,13 +179,33 @@ function removeDead() {
   }
 }
 
+// ---------- Durchlauf und Rekord ----------
+// Neuer Durchlauf: neuer Seed, neuer Held. Mit index.html?depth=5 startet er tiefer (für die Demo).
+const START_DEPTH = Math.min(99, Math.max(1, parseInt(new URLSearchParams(location.search).get('depth'), 10) || 1));   // nur 1 bis 99
+
+function startRun() {
+  game.seed = newRunSeed();
+  player = null;              // sonst nimmt der neue Held die Leben des alten mit
+  buildLevel(START_DEPTH);
+}
+
+// Rekord: tiefste Ebene und ihr Seed, im Browser gespeichert (localStorage)
+function loadRecord() {
+  try { return JSON.parse(localStorage.getItem('fulgur-record')) || { depth: 0 }; }
+  catch (err) { return { depth: 0 }; }   // kein Speicher verfügbar: ohne Rekord weiterspielen
+}
+
+function saveRecord() {
+  if (game.depth <= loadRecord().depth) return;
+  try { localStorage.setItem('fulgur-record', JSON.stringify({ depth: game.depth, seed: game.seed })); }
+  catch (err) { /* kein Speicher verfügbar */ }
+}
 
 // ---------- Ebene aufbauen ----------
 function buildLevel(depth) {
-  const hpBefore = depth > 1 ? player.hp : null  // HP speichern wenn Level grösser als 1
+  const hpBefore = player ? player.hp : null;   // Leben mitnehmen, ausser bei einem neuen Durchlauf
   objects.length = 0;
 
-  if (depth === 1) game.seed = newRunSeed();                       // neuer Durchlauf, neuer Seed
   const L = depth === 1 ? useLevel1()
         : generateLevel(game.seed + depth * 7919, depth);
 

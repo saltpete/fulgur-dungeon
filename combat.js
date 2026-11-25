@@ -38,7 +38,8 @@ function knockback(t, dcol, drow) {
 // Beim Tod des Helden wird der Spielstatus verändert
 function die(t) {
   if (t === player) {
-    game.state = 'dead';   // Spielstatus Tot -> // TODO: Weitere Spielstatusoptionen hinzufügen und Bildschirm entsprechend anpassen (Game Over Screen, Mainmenu, Optionen etc.)
+    game.state = 'dead';   // Spielstatus Tot
+    saveRecord();          // tiefste Ebene merken
     return;
   }
   t.dead = true;

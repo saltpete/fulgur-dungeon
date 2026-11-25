@@ -291,6 +291,7 @@ const input = {
   roll: false,              // Shift für Ausweichrolle
   attack: false,            // Leertaste für Nahkampf
   restart: false,           // R oder Enter: neuer Durchlauf nach dem Tod
+  pause: false,             // ESC: Pause an und aus (Einmal-Impuls)
   particlesEnabled: true,   // P: Partikel an und aus
   cast: false,              // F: Fulgur-Blitz (Einmal-Impuls)   // neu
   overlayEnabled: true,
@@ -305,6 +306,13 @@ const KEYS = {
 };
 
 window.addEventListener('keydown', (e) => {
+
+  // Tippen im Seed-Feld: Das Spiel reagiert dort nur auf Enter
+  if (e.target.id === 'seed') {
+    if (e.code !== 'Enter') return;
+    e.target.blur();
+  }
+
   // Default unterdrücken
   if (KEYS[e.code]) { input[KEYS[e.code]] = true; e.preventDefault(); }
   if (e.code === 'Space') e.preventDefault();
@@ -324,6 +332,9 @@ window.addEventListener('keydown', (e) => {
 
   // Neustart
   if ((e.code === 'KeyR' || e.code === 'Enter') && !e.repeat) input.restart = true;
+
+  // Pause
+  if (e.code === 'Escape' && !e.repeat) input.pause = true;
 
 
     if (!e.repeat && MODE === 'grid') {
@@ -397,10 +408,15 @@ function simulationStep() {
     o.prevX = o.x;
     o.prevY = o.y;
   }
-  if (game.state === 'dead') {
-    // Held tot: Die Welt steht still, nur R oder Enter startet neu (FA-3-4)
-    if (input.restart) buildLevel(1);
-  } else {
+
+  // ESC schaltet zwischen Spiel und Pause um
+  if (input.pause && game.state === 'play') game.state = 'pause';
+  else if (input.pause && game.state === 'pause') game.state = 'play';
+
+  if (game.state === 'menu' || game.state === 'dead') {
+    // Startbild oder Held tot: Die Welt steht still, Enter oder R startet einen neuen Durchlauf (FA-3-4)
+    if (input.restart) startRun();
+  } else if (game.state === 'play') {
     for (const o of objects) {
       o.simulate(STEP);
     }
@@ -414,6 +430,7 @@ function simulationStep() {
   input.attack = false;
   input.cast = false;   // neu
   input.restart = false;
+  input.pause = false;
 }
 
 // ---- GAME LOOP ---------------------------------------------
@@ -438,7 +455,7 @@ function frame(now) {
     lastHurts = player.hurts;
   }
 
-  if (game.depth !== lastDepth) {   // neue Ebene: Banner zeigen
+  if (game.depth !== lastDepth && game.state === 'play') {   // neue Ebene: Banner zeigen, nicht über dem Startbild
     showBanner('Ebene ' + game.depth);
     lastDepth = game.depth;
   }
@@ -628,6 +645,7 @@ class GridMovement {
 
 // Start erst, wenn alle Skripte geladen sind
 window.addEventListener('DOMContentLoaded', () => {
-  buildLevel(1);   // Ebene 1 aufbauen
+  startRun();            // erste Ebene aufbauen, sie liegt hinter dem Startbild
+  game.state = 'menu';   // Startbild, Enter startet
   requestAnimationFrame(frame);
 });

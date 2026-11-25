@@ -21,8 +21,9 @@
 </head>
 <body>
   <h1>Fulgur Dungeon </h1>
+  <input id="seed" inputmode="numeric" maxlength="6" placeholder="Seed (leer = Zufall)" oninput="this.value = this.value.replace(/\D/g, '')">
   <canvas id="game" width="1024" height="576"></canvas>
-  <p>Pfeile oder WASD: laufen · Shift: Rolle · Leertaste: Schwert · F: Blitz · R oder Enter: Neustart (Bei Tod) · O: Overlay · P: Partikel</p>
+  <p>Pfeile oder WASD: laufen · Shift: Rolle · Leertaste: Schwert · F: Blitz · Enter: Start · R oder Enter: Neustart · ESC: Pause · O: Overlay · P: Partikel</p>
   <script src="game.js"></script>
   <script src="world.js"></script>
   <script src="mapgen.js"></script>

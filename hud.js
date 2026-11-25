@@ -59,19 +59,30 @@ function drawHud() {
     // Banner beim Betreten einer Ebene
     drawBanner();
 
-    // Durchlauf vorbei (FA-3-3, FA-3-4)
-    if (game.state === 'dead') {
-        ctx.fillStyle = 'rgba(8, 6, 10, 0.72)';
-        ctx.fillRect(0, 0, W, H);
-        ctx.textAlign = 'center';
-        ctx.fillStyle = '#e04555';
-        ctx.font = 'bold 40px sans-serif';
-        ctx.fillText('Du bist gestorben', W / 2, H / 2 - 20);
-        ctx.fillStyle = '#f4efe6';
-        ctx.font = '18px sans-serif';
-        ctx.fillText('Drücke R oder Enter für einen neuen Durchlauf', W / 2, H / 2 + 20);
-        ctx.textAlign = 'left';
-    }
+    // Startbild, Pause und Game Over liegen über dem Spielfeld (FA-3-3, FA-3-4)
+    if (game.state === 'menu') drawScreen('Fulgur Dungeon', ['Steig so tief hinab, wie du kannst.', recordText(), 'Enter: Start']);
+    if (game.state === 'pause') drawScreen('Pause', ['ESC: weiter']);
+    if (game.state === 'dead') drawScreen('Du bist gestorben', [`Ebene ${game.depth} erreicht · Seed ${game.seed}`, recordText(), 'R oder Enter: neuer Durchlauf'], '#e04555');
+}
+
+// Dunkle Folie mit Titel und Zeilen darunter
+function drawScreen(title, lines, color = '#f4efe6') {
+  ctx.fillStyle = 'rgba(8, 6, 10, 0.72)';
+  ctx.fillRect(0, 0, W, H);
+  ctx.textAlign = 'center';
+  ctx.fillStyle = color;
+  ctx.font = 'bold 40px sans-serif';
+  ctx.fillText(title, W / 2, H / 2 - 30);
+  ctx.fillStyle = '#f4efe6';
+  ctx.font = '18px sans-serif';
+  lines.forEach((line, i) => ctx.fillText(line, W / 2, H / 2 + 10 + i * 26));
+  ctx.textAlign = 'left';
+}
+
+// Rekord als Text für Startbild und Game Over
+function recordText() {
+  const best = loadRecord();
+  return best.depth > 0 ? `Rekord: Ebene ${best.depth} (Seed ${best.seed})` : 'Noch kein Rekord';
 }
 
 // Ein Balken für eine Abklingzeit. ready: 0 gerade benutzt, 1 bereit

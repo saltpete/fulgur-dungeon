@@ -179,11 +179,18 @@ function useLevel1() {
   return LEVEL;
 }
 
-// Seed für einen neuen Durchlauf: mit index.html?seed=42 fest (zum Testen), sonst zufällig
+// Grösster Seed: 6 Ziffern wie im Seed-Feld
+const MAX_SEED = 999999;
+
+// Seed für einen neuen Durchlauf: aus dem Seed-Feld, sonst aus Index-HTML-Feld, sonst zufällig
 function newRunSeed() {
-  const fixed = new URLSearchParams(location.search).get('seed');
-  if (fixed !== null) return parseInt(fixed, 10) || 0;
-  return Math.floor(Math.random() * 1000000);   // nur der Startwert ist zufällig, alles andere folgt daraus
+  const typed = document.getElementById('seed').value.trim();   // Seed-Feld über dem Spielfeld
+  const fixed = typed !== '' ? typed : new URLSearchParams(location.search).get('seed');
+
+  const seed = parseInt(fixed, 10);                    // leer, null oder Buchstaben: NaN
+
+  if (seed >= 0 && seed <= MAX_SEED) return seed;      // NaN besteht keinen Vergleich
+  return Math.floor(Math.random() * (MAX_SEED + 1));   // sonst Zufall: nur der Startwert ist zufällig, alles andere folgt daraus
 }
 
 
